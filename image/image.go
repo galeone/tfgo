@@ -16,6 +16,7 @@ package image
 import (
 	"fmt"
 	"github.com/galeone/tfgo"
+	"github.com/galeone/tfgo/image/padding"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 	"strings"
@@ -71,6 +72,27 @@ func Read(scope *op.Scope, imagePath string, channels int64) *Image {
 	default:
 		panic(fmt.Errorf("Unsupported image extension %s", ext))
 	}
+}
+
+// NewImage creates an *Image from a 3 or 4D input tensor
+// Place the created image within the specified scope
+func NewImage(scope *op.Scope, tensor tf.Output) (image *Image) {
+	fmt.Println(scope, tensor)
+	nd := tensor.Shape().NumDimensions()
+	if nd != 3 && nd != 4 {
+		panic(fmt.Errorf("tensor should be 3 or 4 D, but has %d dimensions", nd))
+	}
+	image = new(Image)
+	image.scope = newImageScope(scope)
+	if nd == 3 {
+		image.value = op.ExpandDims(image.scope.SubScope("ExpandDims"), tensor, op.Const(image.scope.SubScope("axis"), []int32{0}))
+	} else {
+		image.value = tensor
+	}
+	// Copy the tensor to a new node in the graph
+	image.value = op.Identity(image.scope.SubScope("Identity"), image.value)
+	image = image.Scale(0, 1)
+	return image
 }
 
 // Value returns the 3D tensor that represents a single image
@@ -418,7 +440,7 @@ func (image *Image) ResizeNearestNeighbor(size Size, optional ...op.ResizeNeares
 // Convolve executes the convolution operation between the current image and the passed filter
 // The strides parameter rule the stride along each dimension
 // Padding is a padding type to specify the type of padding
-func (image *Image) Convolve(filter tf.Output, stride Stride, padding Padding) *Image {
+func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Padding) *Image {
 	strides := []int64{1, stride.Y, stride.X, 1}
 	image.value = op.Conv2D(image.scope.SubScope("Conv2D"), image.value, filter, strides, padding.String())
 	return image
