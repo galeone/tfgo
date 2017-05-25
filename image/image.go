@@ -77,7 +77,6 @@ func Read(scope *op.Scope, imagePath string, channels int64) *Image {
 // NewImage creates an *Image from a 3 or 4D input tensor
 // Place the created image within the specified scope
 func NewImage(scope *op.Scope, tensor tf.Output) (image *Image) {
-	fmt.Println(scope, tensor)
 	nd := tensor.Shape().NumDimensions()
 	if nd != 3 && nd != 4 {
 		panic(fmt.Errorf("tensor should be 3 or 4 D, but has %d dimensions", nd))
@@ -160,6 +159,24 @@ func (image *Image) Add(tensor tf.Output) *Image {
 	s := image.scope.SubScope("Add")
 	image.value = op.Add(s, image.value, tfgo.Cast(s, tensor, image.Dtype()))
 	return image
+}
+
+// Pow defines the pow operation x^y, where x are the image values
+// y dtype is converted to image.Dtype() before executing Pow
+func (image *Image) Pow(y tf.Output) *Image {
+	s := image.scope.SubScope("Pow")
+	image.value = op.Pow(s, image.value, tfgo.Cast(s, y, image.Dtype()))
+	return image
+}
+
+// Square defines the square operation for the image values
+func (image *Image) Square() *Image {
+	return image.Pow(op.Const(image.scope.SubScope("y"), 2.))
+}
+
+// Sqrt defines the square root operation for the image values
+func (image *Image) Sqrt() *Image {
+	return image.Pow(op.Const(image.scope.SubScope("y"), 0.5))
 }
 
 // Scale scales the image range value to be within [min, max]
@@ -441,7 +458,18 @@ func (image *Image) ResizeNearestNeighbor(size Size, optional ...op.ResizeNeares
 // The strides parameter rule the stride along each dimension
 // Padding is a padding type to specify the type of padding
 func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Padding) *Image {
+	s := image.scope.SubScope("Conv2D")
+	// filp the kernel in order to use the correlation operation (here called convolution)
+	// like a real convolution operation
+	filter = op.ReverseV2(s.SubScope("ReverseV2"), filter, op.Const(s.SubScope("axis"), []int32{0, 1}))
+	return image.Correlate(filter, stride, padding)
+}
+
+// Correlate executes the correlation operation between the current image and the passed filter
+// The strides parameter rule the stride along each dimension
+// Padding is a padding type to specify the type of padding
+func (image *Image) Correlate(filter tf.Output, stride Stride, padding padding.Padding) *Image {
 	strides := []int64{1, stride.Y, stride.X, 1}
-	image.value = op.Conv2D(image.scope.SubScope("Conv2D"), image.value, filter, strides, padding.String())
+	image.value = op.Conv2D(image.scope.SubScope("Corr2D"), image.value, filter, strides, padding.String())
 	return image
 }
