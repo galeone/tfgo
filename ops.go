@@ -36,8 +36,8 @@ func Cast(scope *op.Scope, value tf.Output, dtype tf.DataType) tf.Output {
 	return op.Cast(scope.SubScope("Cast"), value, dtype)
 }
 
-// NewScope creates a new *op.Scope
-func NewScope() *op.Scope {
+// NewRoot creates a new *op.Scope, empty
+func NewRoot() *op.Scope {
 	return op.NewScope()
 }
 

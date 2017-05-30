@@ -1,16 +1,14 @@
 package image
 
 import (
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
-	"github.com/tensorflow/tensorflow/tensorflow/go/op"
+	"github.com/galeone/tfgo"
 )
 
 // Image is the type that abstracts a Tensorflow tensor
 // representing an image.
 // The image is always a float32 value unless manually casted.
 type Image struct {
-	value tf.Output
-	scope *op.Scope
+	*tfgo.Tensor
 }
 
 // Point represents a single point in the 2D space

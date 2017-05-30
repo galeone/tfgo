@@ -29,7 +29,7 @@ const (
 )
 
 func TestReadPNG(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img1 := image.ReadPNG(root, pngImagePath, 3)
 	results := tfgo.Exec(root, []tf.Output{img1.Value()}, nil, &tf.SessionOptions{})
 	if !reflect.DeepEqual(results[0].Shape(), []int64{180, 180, 3}) {
@@ -41,7 +41,7 @@ func TestReadPNG(t *testing.T) {
 }
 
 func TestReadJPEG(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img1 := image.ReadJPEG(root, jpegImagePath, 3)
 	results := tfgo.Exec(root, []tf.Output{img1.Value()}, nil, &tf.SessionOptions{})
 	if !reflect.DeepEqual(results[0].Shape(), []int64{900, 900, 3}) {
@@ -53,7 +53,7 @@ func TestReadJPEG(t *testing.T) {
 }
 
 func TestReadGIF(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img1 := image.ReadGIF(root, gifImagePath)
 	results := tfgo.Exec(root, []tf.Output{img1.Value()}, nil, &tf.SessionOptions{})
 	if !reflect.DeepEqual(results[0].Shape(), []int64{140, 591, 705, 3}) {
@@ -65,7 +65,7 @@ func TestReadGIF(t *testing.T) {
 }
 
 func TestResizeArea(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
 	resize1 := img.Clone().ResizeArea(image.Size{Height: 80, Width: 80}).Value()
 	resize2 := img.Clone().ResizeArea(image.Size{Height: 30, Width: 30}).Value()
@@ -80,7 +80,7 @@ func TestResizeArea(t *testing.T) {
 }
 
 func TestResizeBicubic(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
 	resize1 := img.Clone().ResizeBicubic(image.Size{Height: 80, Width: 80}).Value()
 	resize2 := img.Clone().ResizeBicubic(image.Size{Height: 30, Width: 30}).Value()
@@ -95,7 +95,7 @@ func TestResizeBicubic(t *testing.T) {
 }
 
 func TestResizeBilinear(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
 	resize1 := img.Clone().ResizeBilinear(image.Size{Height: 80, Width: 80}).Value()
 	resize2 := img.Clone().ResizeBilinear(image.Size{Height: 30, Width: 30}).Value()
@@ -110,7 +110,7 @@ func TestResizeBilinear(t *testing.T) {
 }
 
 func TestResizeNearestNeighbor(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
 	resize1 := img.Clone().ResizeNearestNeighbor(image.Size{Height: 80, Width: 80}).Value()
 	resize2 := img.Clone().ResizeNearestNeighbor(image.Size{Height: 30, Width: 30}).Value()
@@ -125,7 +125,7 @@ func TestResizeNearestNeighbor(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80}).Cast(tf.Double)
 	dims := img.Shape32(false)
 	s := img.Scope()
@@ -148,7 +148,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestAdjustBrightness(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80})
 	imgBright := img.Clone().AdjustBrightness(0.5)
 	results := tfgo.Exec(root, []tf.Output{img.Value(), imgBright.Value()}, nil, &tf.SessionOptions{})
@@ -160,7 +160,7 @@ func TestAdjustBrightness(t *testing.T) {
 }
 
 func TestEncodeJPEG(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, jpegImagePath, 3)
 	results := tfgo.Exec(root, []tf.Output{img.EncodeJPEG()}, nil, &tf.SessionOptions{})
 	if len(results[0].Value().(string)) == 0 {
@@ -169,7 +169,7 @@ func TestEncodeJPEG(t *testing.T) {
 }
 
 func TestEncodePNG(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
 	results := tfgo.Exec(root, []tf.Output{img.EncodePNG()}, nil, &tf.SessionOptions{})
 	if len(results[0].Value().(string)) == 0 {
@@ -178,7 +178,7 @@ func TestEncodePNG(t *testing.T) {
 }
 
 func TestRGB2Grayscale(t *testing.T) {
-	root := op.NewScope()
+	root := tfgo.NewRoot()
 	img := image.Read(root, pngImagePath, 3).ResizeArea(image.Size{Height: 80, Width: 80}).RGBToGrayscale().Value()
 	results := tfgo.Exec(root, []tf.Output{img}, nil, &tf.SessionOptions{})
 

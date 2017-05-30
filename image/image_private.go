@@ -20,13 +20,6 @@ import (
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 )
 
-var imageCounter int
-
-func newImageScope(root *op.Scope) *op.Scope {
-	imageCounter++
-	return root.SubScope(fmt.Sprint("input_", imageCounter))
-}
-
 func boxes2batch(scope *op.Scope, boxes []Box) tf.Output {
 	s := scope.SubScope("boxes2batch")
 	var tfboxes []tf.Output
