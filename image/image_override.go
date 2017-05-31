@@ -45,6 +45,14 @@ func (image *Image) Add(tfout tf.Output) *Image {
 	return image
 }
 
+// Mul defines the multiplication operation between the tensor
+// and `tfout`.
+// `tfout` dtype is converted to tensor.Dtype() before multiplying
+func (image *Image) Mul(tfout tf.Output) *Image {
+	image.Tensor = image.Tensor.Mul(tfout)
+	return image
+}
+
 // Pow defines the pow operation x^y, where x are the image values
 // y dtype is converted to image.Dtype() before executing Pow
 func (image *Image) Pow(y tf.Output) *Image {
