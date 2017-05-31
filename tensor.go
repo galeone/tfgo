@@ -56,7 +56,7 @@ func (tensor *Tensor) Shape64(firstDimension bool) []int64 {
 // Otherwise a 3 elements sice is returned.
 func (tensor *Tensor) Shape32(firstDimension bool) []int32 {
 	dims64 := tensor.Shape64(firstDimension)
-	var dims32 []int32 = make([]int32, len(dims64))
+	var dims32 = make([]int32, len(dims64))
 	for idx, dim := range dims64 {
 		dims32[idx] = int32(dim)
 	}
@@ -93,6 +93,15 @@ func (tensor *Tensor) Cast(dtype tf.DataType) *Tensor {
 func (tensor *Tensor) Add(tfout tf.Output) *Tensor {
 	s := tensor.Path.SubScope("Add")
 	tensor.Output = op.Add(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
+	return tensor
+}
+
+// Mul defines the multiplication operation between the tensor
+// and `tfout`.
+// `tfout` dtype is converted to tensor.Dtype() before multiplying
+func (tensor *Tensor) Mul(tfout tf.Output) *Tensor {
+	s := tensor.Path.SubScope("Mul")
+	tensor.Output = op.Mul(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
 	return tensor
 }
 
