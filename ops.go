@@ -60,9 +60,8 @@ func Exec(scope *op.Scope, tensors []tf.Output, feedDict map[tf.Output]*tf.Tenso
 	if sess, err := tf.NewSession(graph, options); err == nil {
 		if results, err := sess.Run(feedDict, tensors, nil); err == nil {
 			return results
-		} else {
-			panic(err)
 		}
+		panic(err)
 	} else {
 		panic(err)
 	}
