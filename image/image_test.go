@@ -143,7 +143,7 @@ func TestAdd(t *testing.T) {
 	floatNoisyImage := results[2].Value().([][][]float64)
 
 	if floatNoisyImage[0][0][0] != (floatImg[0][0][0] + floatNoise[0][0][0]) {
-		t.Error("Add img + noise should be coherent but got: %f != %f + %f", floatNoisyImage[0][0][0], floatImg[0][0][0], floatNoise[0][0][0])
+		t.Errorf("Add img + noise should be coherent but got: %f != %f + %f", floatNoisyImage[0][0][0], floatImg[0][0][0], floatNoise[0][0][0])
 	}
 }
 
