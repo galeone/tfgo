@@ -194,21 +194,19 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 			image.Output = op.Div(s.SubScope("Div"), image.Output, scale)
 			if saturate {
 				return image.SaturateCast(dtype)
-			} else {
-				image = image.Cast(dtype)
-				return image
 			}
-		} else {
-			scale := op.Const(s.SubScope("Const"), int64(scaleOut+1)/int64(scaleIn+1))
-			if saturate {
-				image = image.SaturateCast(dtype)
-				image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
-			} else {
-				image = image.Cast(dtype)
-				image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
-			}
+			image = image.Cast(dtype)
 			return image
 		}
+		scale := op.Const(s.SubScope("Const"), int64(scaleOut+1)/int64(scaleIn+1))
+		if saturate {
+			image = image.SaturateCast(dtype)
+			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
+		} else {
+			image = image.Cast(dtype)
+			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
+		}
+		return image
 	} else if tfgo.IsFloat(image.Dtype()) && tfgo.IsFloat(dtype) {
 		image = image.Cast(dtype)
 		return image
@@ -222,10 +220,9 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 			image.Output = op.Mul(s.SubScope("Mul"), tfgo.Cast(s, image.Output, tf.Double), scale)
 			if saturate {
 				return image.SaturateCast(dtype)
-			} else {
-				image = image.Cast(dtype)
-				return image
 			}
+			image = image.Cast(dtype)
+			return image
 		}
 	}
 
@@ -295,7 +292,7 @@ func (image *Image) CentralCrop(centralFraction float32) *Image {
 	return image
 }
 
-// Crop the image to the specified box and resize the result to size
+// CropAndResize crops the image to the specified box and resize the result to size
 func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResizeAttr) *Image {
 	s := image.Path.SubScope("cropAndResize")
 	boxes := boxes2batch(s, []Box{box})
@@ -335,7 +332,7 @@ func (image *Image) ExtractGlimpse(size Size, offsets []Point, optional ...op.Ex
 		optional...)
 }
 
-// RGB2Grayscale converts the image from RGB to Grayscale
+// RGBToGrayscale converts the image from RGB to Grayscale
 func (image *Image) RGBToGrayscale() *Image {
 	s := image.Path.SubScope("RGB2Grayscale")
 	image = image.Cast(tf.Float)
@@ -385,7 +382,7 @@ func (image *Image) ResizeNearestNeighbor(size Size, optional ...op.ResizeNeares
 }
 
 // Convolve executes the convolution operation between the current image and the passed filter
-// The strides parameter rule the stride along each dimension
+// The strides parameter rules the stride along each dimension
 // Padding is a padding type to specify the type of padding
 func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Padding) *Image {
 	s := image.Path.SubScope("Conv2D")
@@ -396,10 +393,37 @@ func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Pa
 }
 
 // Correlate executes the correlation operation between the current image and the passed filter
-// The strides parameter rule the stride along each dimension
+// The strides parameter rules the stride along each dimension
 // Padding is a padding type to specify the type of padding
 func (image *Image) Correlate(filter tf.Output, stride Stride, padding padding.Padding) *Image {
 	strides := []int64{1, stride.Y, stride.X, 1}
 	image.Output = op.Conv2D(image.Path.SubScope("Corr2D"), image.Output, filter, strides, padding.String())
 	return image
+}
+
+// Dilate executes the dilatation operation between the current image and the padded filter
+// The strides parameter rules the stride along each dimension, in output.
+// The rate parameter rules the input stride for atrous morphological dilatation
+// Padding is a padding type to specify the type of padding
+func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding padding.Padding) *Image {
+	strides := []int64{1, stride.Y, stride.X, 1}
+	rates := []int64{1, rate.Y, rate.X, 1}
+	s := image.Path.SubScope("Dilatation2d")
+	filter = tfgo.Cast(s, filter, image.Dtype())
+	image.Output = op.Dilation2D(s, image.Output, filter, strides, rates, padding.String())
+	return image
+}
+
+// Erode ececutes the erosion operation between the current image and the padded filter
+// The strides parameter rules the stride along each dimension
+// The rate parameter rules the input stride for atrous morphological dilatation
+// Padding is a padding type to specify the type of padding
+func (image *Image) Erode(filter tf.Output, stride, rate Stride, padding padding.Padding) *Image {
+	s := image.Path.SubScope("Erode")
+	// Negate the input
+	negativeOne := tfgo.Cast(s, op.Const(s.SubScope("negative"), -1.), image.Dtype())
+	image = image.Mul(negativeOne)
+	// Flip the kernel
+	filter = op.ReverseV2(s.SubScope("ReverseV2"), filter, op.Const(s.SubScope("axis"), []int32{0, 1}))
+	return image.Dilate(filter, stride, rate, padding)
 }
