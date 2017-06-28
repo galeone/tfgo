@@ -35,6 +35,16 @@ func NewTensor(scope *op.Scope, tfout tf.Output) (tensor *Tensor) {
 	return tensor
 }
 
+// Check checks if the previous operation caused an error
+// and thus tensor.Path.Err is not nil.
+// If it's not, panics because we're defining the graph in a wrong way
+func (tensor *Tensor) Check() {
+	err := tensor.Path.Err()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 // Scope returns the scope associated to the tensor
 func (tensor *Tensor) Scope() *op.Scope {
 	return tensor.Path
@@ -78,12 +88,14 @@ func (tensor *Tensor) Dtype() tf.DataType {
 // Clone must be used when one want to create a different tensor
 // from the output of an operation.
 func (tensor *Tensor) Clone() *Tensor {
+	defer tensor.Check()
 	scope := NewScope(tensor.Path)
 	return NewTensor(scope, tensor.Output)
 }
 
 // Cast casts the current tensor to the requested dtype
 func (tensor *Tensor) Cast(dtype tf.DataType) *Tensor {
+	defer tensor.Check()
 	tensor.Output = Cast(tensor.Path, tensor.Output, dtype)
 	return tensor
 }
@@ -91,6 +103,7 @@ func (tensor *Tensor) Cast(dtype tf.DataType) *Tensor {
 // Add defines the add operation between the tensor and tfout
 // `tfout` dtype is converted to tensor.Dtype() before adding
 func (tensor *Tensor) Add(tfout tf.Output) *Tensor {
+	defer tensor.Check()
 	s := tensor.Path.SubScope("Add")
 	tensor.Output = op.Add(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
 	return tensor
@@ -100,6 +113,7 @@ func (tensor *Tensor) Add(tfout tf.Output) *Tensor {
 // and `tfout`.
 // `tfout` dtype is converted to tensor.Dtype() before multiplying
 func (tensor *Tensor) Mul(tfout tf.Output) *Tensor {
+	defer tensor.Check()
 	s := tensor.Path.SubScope("Mul")
 	tensor.Output = op.Mul(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
 	return tensor
@@ -108,6 +122,7 @@ func (tensor *Tensor) Mul(tfout tf.Output) *Tensor {
 // Pow defines the pow operation x^y, where x are the tensor values
 // y dtype is converted to tensor.Dtype() before executing Pow
 func (tensor *Tensor) Pow(y tf.Output) *Tensor {
+	defer tensor.Check()
 	s := tensor.Path.SubScope("Pow")
 	tensor.Output = op.Pow(s, tensor.Output, Cast(s, y, tensor.Dtype()))
 	return tensor
@@ -115,10 +130,12 @@ func (tensor *Tensor) Pow(y tf.Output) *Tensor {
 
 // Square defines the square operation for the tensor values
 func (tensor *Tensor) Square() *Tensor {
+	defer tensor.Check()
 	return tensor.Pow(op.Const(tensor.Path.SubScope("y"), 2.))
 }
 
 // Sqrt defines the square root operation for the tensor values
 func (tensor *Tensor) Sqrt() *Tensor {
+	defer tensor.Check()
 	return tensor.Pow(op.Const(tensor.Path.SubScope("y"), 0.5))
 }

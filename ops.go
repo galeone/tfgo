@@ -46,6 +46,20 @@ func Const(scope *op.Scope, value interface{}) tf.Output {
 	return op.Const(scope.SubScope("Const"), value)
 }
 
+// IsClose defines the isclose operation between a and b.
+// Returns a conditional node that is true when a is close to b.
+// relTol is the relative tolerance
+// absTol is the absolute tolerance
+func IsClose(scope *op.Scope, a, b tf.Output, relTol, absTol tf.Output) tf.Output {
+	s := scope.SubScope("IsClose")
+	return op.LessEqual(s.SubScope("LessEqual"),
+		op.Abs(s.SubScope("Abs"),
+			op.Sub(s.SubScope("Sub"), a, b)),
+		op.Maximum(s.SubScope("Maximum"),
+			op.Mul(s.SubScope("Mul"), relTol,
+				op.Maximum(s.SubScope("Maximum"), op.Abs(s.SubScope("Abs"), a), op.Abs(s.SubScope("Abs"), b))), absTol))
+}
+
 // Exec creates the computation graph from the scope, then executes
 // the operations required to compute each element of tensors.
 // Node in the graph can be overwritten with feedDict.

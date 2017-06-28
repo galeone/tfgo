@@ -98,6 +98,7 @@ func NewImage(scope *op.Scope, tensor tf.Output) (image *Image) {
 // in the Tensorflow environment.
 // If the image is a GIF the returned tensor is 4D
 func (image *Image) Value() tf.Output {
+	defer image.Tensor.Check()
 	if image.Output.Shape().Size(0) == 1 {
 		return op.Squeeze(image.Path.SubScope("Squeeze"), image.Output, op.SqueezeSqueezeDims([]int64{0}))
 	}
@@ -106,6 +107,7 @@ func (image *Image) Value() tf.Output {
 
 // Scale scales the image range value to be within [min, max]
 func (image *Image) Scale(min, max float32) *Image {
+	defer image.Tensor.Check()
 	if image.Dtype() != tf.Float {
 		image = image.Cast(tf.Float)
 	}
@@ -124,6 +126,7 @@ func (image *Image) Scale(min, max float32) *Image {
 // and normalizes every pixel subtracting the mean (centering) and dividing by
 // the stddev (scale)
 func (image *Image) Normalize() *Image {
+	defer image.Tensor.Check()
 	if image.Dtype() != tf.Float {
 		image = image.Cast(tf.Float)
 	}
@@ -157,6 +160,7 @@ func (image *Image) Normalize() *Image {
 // Center computes the mean value of the pixel values and subtract this value
 // to every pixel: this operation centers the data
 func (image *Image) Center() *Image {
+	defer image.Tensor.Check()
 	if image.Dtype() != tf.Float {
 		image = image.Cast(tf.Float)
 	}
@@ -169,6 +173,7 @@ func (image *Image) Center() *Image {
 // SaturateCast casts the image to dtype handling overflow and underflow problems, saturate the exceeding values to
 // to minimum/maximum accepted value of the dtype
 func (image *Image) SaturateCast(dtype tf.DataType) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("saturateCast")
 	if tfgo.MinValue(image.Dtype()) < tfgo.MinValue(dtype) {
 		image.Output = op.Maximum(s.SubScope("Maximum"), tfgo.Cast(s, image.Output, tf.Double), op.Const(s.SubScope("Const"), tfgo.MinValue(dtype)))
@@ -182,6 +187,7 @@ func (image *Image) SaturateCast(dtype tf.DataType) *Image {
 
 // ConvertDtype converts the Image dtype to dtype, uses SaturatesCast if required
 func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
+	defer image.Tensor.Check()
 	if dtype == image.Dtype() {
 		return image
 	}
@@ -231,12 +237,14 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 
 // AdjustBrightness adds delta to the image
 func (image *Image) AdjustBrightness(delta float32) *Image {
+	defer image.Tensor.Check()
 	image = image.Add(op.Const(image.Path.SubScope("delta"), delta))
 	return image
 }
 
 // AdjustContrast changes the contrast by contrastFactor
 func (image *Image) AdjustContrast(contrastFactor float32) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("adjustContrast")
 	image.Output = op.AdjustContrastv2(s.SubScope("AdjustContrastv2"), image.Output, op.Const(s.SubScope("contrastFactor"), contrastFactor))
 	return image
@@ -244,6 +252,7 @@ func (image *Image) AdjustContrast(contrastFactor float32) *Image {
 
 // AdjustGamma performs gamma correction on the image
 func (image *Image) AdjustGamma(gamma, gain float32) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("adjustGamma")
 	dtype := image.Dtype()
 	scale := op.Const(s.SubScope("scale"), tfgo.MaxValue(dtype)-tfgo.MinValue(dtype))
@@ -257,6 +266,7 @@ func (image *Image) AdjustGamma(gamma, gain float32) *Image {
 
 // AdjustHue changes toe Hue by delta
 func (image *Image) AdjustHue(delta float32) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("adjustHue")
 	image.Output = op.AdjustHue(s.SubScope("AdjustHue"), image.Output, op.Const(s.SubScope("delta"), delta))
 	return image
@@ -264,6 +274,7 @@ func (image *Image) AdjustHue(delta float32) *Image {
 
 // AdjustSaturation changes the saturation by saturationFactor
 func (image *Image) AdjustSaturation(saturationFactor float32) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("adjustSaturation")
 	image.Output = op.AdjustSaturation(s.SubScope("AdjustSaturation"), image.Output, op.Const(s.SubScope("saturationFactor"), saturationFactor))
 	return image
@@ -271,6 +282,7 @@ func (image *Image) AdjustSaturation(saturationFactor float32) *Image {
 
 // CentralCrop extracts from the center of the image a portion of image with an area equals to the centralFraction
 func (image *Image) CentralCrop(centralFraction float32) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("centralCrop")
 	shape := image.Shape32(false)
 	//depth := shape[2]
@@ -294,6 +306,7 @@ func (image *Image) CentralCrop(centralFraction float32) *Image {
 
 // CropAndResize crops the image to the specified box and resize the result to size
 func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResizeAttr) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("cropAndResize")
 	boxes := boxes2batch(s, []Box{box})
 	image.Output = op.CropAndResize(s.SubScope("CropAndResize"),
@@ -306,6 +319,7 @@ func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResi
 
 // DrawBoundingBoxes draws the specified boxes to the image
 func (image *Image) DrawBoundingBoxes(boxes []Box) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("drawBoundingBoxes")
 	image.Output = op.DrawBoundingBoxes(s.SubScope("DrawBoundingBoxes"), image.Output, boxes2batch(s, boxes))
 	return image
@@ -313,18 +327,21 @@ func (image *Image) DrawBoundingBoxes(boxes []Box) *Image {
 
 // EncodeJPEG encodes the image in the JPEG format and returns an evaluable tensor
 func (image *Image) EncodeJPEG(optional ...op.EncodeJpegAttr) tf.Output {
+	defer image.Tensor.Check()
 	image = image.Scale(0, 255).Cast(tf.Uint8)
 	return op.EncodeJpeg(image.Path.SubScope("EncodeJpeg"), image.Value(), optional...)
 }
 
 // EncodePNG encodes the image in the PNG format and returns an evaluable tensor
 func (image *Image) EncodePNG(optional ...op.EncodePngAttr) tf.Output {
+	defer image.Tensor.Check()
 	image = image.Scale(0, 255).Cast(tf.Uint8)
 	return op.EncodePng(image.Path.SubScope("EncodePng"), image.Value(), optional...)
 }
 
 // ExtractGlimpse extracts a set of glimpses with the specified size at the different offests
 func (image *Image) ExtractGlimpse(size Size, offsets []Point, optional ...op.ExtractGlimpseAttr) tf.Output {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("extractGlimpse")
 	return op.ExtractGlimpse(s.SubScope("ExtractGlimpse"),
 		image.Output,
@@ -334,6 +351,7 @@ func (image *Image) ExtractGlimpse(size Size, offsets []Point, optional ...op.Ex
 
 // RGBToGrayscale converts the image from RGB to Grayscale
 func (image *Image) RGBToGrayscale() *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("RGB2Grayscale")
 	image = image.Cast(tf.Float)
 	rgbWeights := op.Const(s.SubScope("RGBWeights"), []float32{0.2989, 0.5870, 0.1140})
@@ -343,18 +361,21 @@ func (image *Image) RGBToGrayscale() *Image {
 
 // HSVToRGB performs the colorspace transformation from HSV to RGB
 func (image *Image) HSVToRGB() *Image {
+	defer image.Tensor.Check()
 	image.Output = op.HSVToRGB(image.Path.SubScope("HSVToRGB"), image.Output)
 	return image
 }
 
 // RGBToHSV performs the colorspace transformation from RGB to HSV
 func (image *Image) RGBToHSV() *Image {
+	defer image.Tensor.Check()
 	image.Output = op.RGBToHSV(image.Path.SubScope("RGBToHSV"), image.Output)
 	return image
 }
 
 // ResizeArea resizes the image to the specified size using the Area interpolation
 func (image *Image) ResizeArea(size Size, optional ...op.ResizeAreaAttr) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("resizeArea")
 	image.Output = op.ResizeArea(s.SubScope("ResizeArea"), image.Output, op.Const(s.SubScope("size"), []int32{int32(size.Height), int32(size.Width)}))
 	return image
@@ -362,6 +383,7 @@ func (image *Image) ResizeArea(size Size, optional ...op.ResizeAreaAttr) *Image 
 
 // ResizeBicubic resizes the image to the specified size using the Bicubic interpolation
 func (image *Image) ResizeBicubic(size Size, optional ...op.ResizeBicubicAttr) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("resizeBicubic")
 	image.Output = op.ResizeBicubic(s.SubScope("ResizeBicubic"), image.Output, op.Const(s.SubScope("size"), []int32{int32(size.Height), int32(size.Width)}))
 	return image
@@ -369,6 +391,7 @@ func (image *Image) ResizeBicubic(size Size, optional ...op.ResizeBicubicAttr) *
 
 // ResizeBilinear resizes the image to the specified size using the Bilinear interpolation
 func (image *Image) ResizeBilinear(size Size, optional ...op.ResizeBilinearAttr) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("resizeBilinear")
 	image.Output = op.ResizeBilinear(s.SubScope("ResizeBilinear"), image.Output, op.Const(s.SubScope("size"), []int32{int32(size.Height), int32(size.Width)}))
 	return image
@@ -376,6 +399,7 @@ func (image *Image) ResizeBilinear(size Size, optional ...op.ResizeBilinearAttr)
 
 // ResizeNearestNeighbor resizes the image to the specified size using the NN interpolation
 func (image *Image) ResizeNearestNeighbor(size Size, optional ...op.ResizeNearestNeighborAttr) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("resizeNearestNeighbor")
 	image.Output = op.ResizeNearestNeighbor(s.SubScope("ResizeNearestNeighbor"), image.Output, op.Const(s.SubScope("size"), []int32{int32(size.Height), int32(size.Width)}))
 	return image
@@ -385,6 +409,7 @@ func (image *Image) ResizeNearestNeighbor(size Size, optional ...op.ResizeNeares
 // The strides parameter rules the stride along each dimension
 // Padding is a padding type to specify the type of padding
 func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Padding) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("Conv2D")
 	// filp the kernel in order to use the correlation operation (here called convolution)
 	// like a real convolution operation
@@ -396,6 +421,7 @@ func (image *Image) Convolve(filter tf.Output, stride Stride, padding padding.Pa
 // The strides parameter rules the stride along each dimension
 // Padding is a padding type to specify the type of padding
 func (image *Image) Correlate(filter tf.Output, stride Stride, padding padding.Padding) *Image {
+	defer image.Tensor.Check()
 	strides := []int64{1, stride.Y, stride.X, 1}
 	image.Output = op.Conv2D(image.Path.SubScope("Corr2D"), image.Output, filter, strides, padding.String())
 	return image
@@ -406,6 +432,7 @@ func (image *Image) Correlate(filter tf.Output, stride Stride, padding padding.P
 // The rate parameter rules the input stride for atrous morphological dilatation
 // Padding is a padding type to specify the type of padding
 func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding padding.Padding) *Image {
+	defer image.Tensor.Check()
 	strides := []int64{1, stride.Y, stride.X, 1}
 	rates := []int64{1, rate.Y, rate.X, 1}
 	s := image.Path.SubScope("Dilatation2d")
@@ -419,6 +446,7 @@ func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding paddin
 // The rate parameter rules the input stride for atrous morphological dilatation
 // Padding is a padding type to specify the type of padding
 func (image *Image) Erode(filter tf.Output, stride, rate Stride, padding padding.Padding) *Image {
+	defer image.Tensor.Check()
 	s := image.Path.SubScope("Erode")
 	// Negate the input
 	negativeOne := tfgo.Cast(s, op.Const(s.SubScope("negative"), -1.), image.Dtype())
