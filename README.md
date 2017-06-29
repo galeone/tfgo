@@ -13,7 +13,7 @@ Also, it uses [Method chaining](https://en.wikipedia.org/wiki/Method_chaining) m
 
 Prerequisite: https://www.tensorflow.org/versions/master/install/install_go
 
-The core data structure of the Tensorflow's Go bindings is the `op.Scope` struct. tfgo allows creating new `*op.Scope` that solve the scoping issue mentioned above.
+The core data structure of the Tensorflow's Go bindings is the `op.Scope` struct. tfgo allows creating new `*op.Scope` that solves the scoping issue mentioned above.
 
 Since we're defining a graph, let's start from its root (empty graph)
 
@@ -62,11 +62,11 @@ The list of the available methods is available on GoDoc: http://godoc.org/github
 
 # Computer Vision using data flow graph
 
-Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allow using the Go bindings to perform computer vision tasks in a elegant way.
+Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allows using the Go bindings to perform computer vision tasks in a elegant way.
 
-For instance, it's possible to read an image, compute it's directional derivative along the horizontal and vertical directions, compute the gradient and save it.
+For instance, it's possible to read an image, compute its directional derivative along the horizontal and vertical directions, compute the gradient and save it.
 
-The code below do that, showing the different results achieved using correlation and convolution operations.
+The code below does that, showing the different results achieved using correlation and convolution operations.
 
 ```go
 package main
@@ -124,12 +124,12 @@ the list of the available methods is available on GoDoc: http://godoc.org/github
 
 Thinking about computation represented using graphs, describing computing in this way is, in one word, *challenging*.
 
-Also, tfgo brings GPU computations to Go and allows writing parallel code without worring about the device that execute it
+Also, tfgo brings GPU computations to Go and allows writing parallel code without worrying about the device that executes it
 (just place the graph into the device you desire: that's it!)
 
 # Contribute
 
-I love contributions. Seriously. Having people that shares your same insterest and want to face your same challenges it's something awsome.
+I love contributions. Seriously. Having people that share your same interests and want to face your same challenges it's something awsome.
 
 If you'd like to contribute, just dig in the code and see what can be added or improved. Start a dicussion opening an issue and let's talk about it.
 
