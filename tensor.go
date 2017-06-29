@@ -110,12 +110,22 @@ func (tensor *Tensor) Add(tfout tf.Output) *Tensor {
 }
 
 // Mul defines the multiplication operation between the tensor
-// and `tfout`.
+// and `tfout`. It's the multiplication element-wise with broadcasting support.
 // `tfout` dtype is converted to tensor.Dtype() before multiplying
 func (tensor *Tensor) Mul(tfout tf.Output) *Tensor {
 	defer tensor.Check()
 	s := tensor.Path.SubScope("Mul")
 	tensor.Output = op.Mul(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
+	return tensor
+}
+
+// MatMul defines the matrix multiplication operation between the tensor
+// and `tfout`.
+// `tfout` dtype is converted to tensor.Dtype() before multiplying
+func (tensor *Tensor) MatMul(tfout tf.Output) *Tensor {
+	defer tensor.Check()
+	s := tensor.Path.SubScope("MatMul")
+	tensor.Output = op.MatMul(s, tensor.Output, Cast(s, tfout, tensor.Dtype()))
 	return tensor
 }
 
