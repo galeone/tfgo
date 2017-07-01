@@ -82,7 +82,7 @@ import (
 
 func main() {
         root := tfgo.NewRoot()
-        grayImg := image.Read(root, "/home/pgaleone/test_sobel.PNG", 1)
+        grayImg := image.Read(root, "/home/pgaleone/airplane.png", 1)
         grayImg = grayImg.Scale(0, 255)
 
         // Edge detection using sobel filter: convolution
@@ -95,7 +95,8 @@ func main() {
         correlateEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).EncodeJPEG()
 
         results := tfgo.Exec(root, []tf.Output{convoluteEdges, correlateEdges}, nil, &tf.SessionOptions{})
-        file, _ := os.Create("convolve.png")
+
+        file, _ := os.Create("convolved.png")
         file.WriteString(results[0].Value().(string))
         file.Close()
 
@@ -110,13 +111,13 @@ func main() {
 
 ![airplane](https://i.imgur.com/QS6shgc.jpg)
 
-**correlated.jpg**
-
-![correlated](https://i.imgur.com/vhYF7o3.jpg)
-
-**convolved.jpg**
+**convolved.png**
 
 ![convolved](https://i.imgur.com/zVndo9B.jpg)
+
+**correlated.png**
+
+![correlated](https://i.imgur.com/vhYF7o3.jpg)
 
 the list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo/image
 
