@@ -62,7 +62,7 @@ The list of the available methods is available on GoDoc: http://godoc.org/github
 
 # Computer Vision using data flow graph
 
-Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allows using the Go bindings to perform computer vision tasks in a elegant way.
+Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allows using the Go bindings to perform computer vision tasks in an elegant way.
 
 For instance, it's possible to read an image, compute its directional derivative along the horizontal and vertical directions, compute the gradient and save it.
 
@@ -130,10 +130,10 @@ Also, tfgo brings GPU computations to Go and allows writing parallel code withou
 
 # Contribute
 
-I love contributions. Seriously. Having people that share your same interests and want to face your same challenges it's something awsome.
+I love contributions. Seriously. Having people that share your same interests and want to face your same challenges it's something awesome.
 
 If you'd like to contribute, just dig in the code and see what can be added or improved. Start a dicussion opening an issue and let's talk about it.
 
 Just follow the same design I use into the `image` package ("override" the same `Tensor` methods, document the methods, **test** your changes, ...)
 
-There are **a lot** of packages that can be added, like the `image` package. Feel free to work on a brand new package: I'd love to see this kind of contribution!
+There are **a lot** of packages that can be added, like the `image` package. Feel free to work on a brand new package: I'd love to see this kind of contributions!
