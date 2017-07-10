@@ -14,19 +14,19 @@ limitations under the License.
 package tfgo_test
 
 import (
-	"github.com/galeone/tfgo"
+	tg "github.com/galeone/tfgo"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"reflect"
 	"testing"
 )
 
 func TestBatchify(t *testing.T) {
-	root := tfgo.NewRoot()
+	root := tg.NewRoot()
 	var tensors []tf.Output
 	for i := 0; i < 10; i++ {
-		tensors = append(tensors, tfgo.Const(root, [3]int32{1, 2, 3}))
+		tensors = append(tensors, tg.Const(root, [3]int32{1, 2, 3}))
 	}
-	batch := tfgo.Batchify(root, tensors)
+	batch := tg.Batchify(root, tensors)
 
 	if batch.Shape().NumDimensions() != 2 {
 		t.Errorf("Expected 2D tensor, but got: %dD tensor", batch.Shape().NumDimensions())
@@ -37,7 +37,7 @@ func TestBatchify(t *testing.T) {
 		t.Errorf("Expected shape (10,3), got  (%d,%d)", shape[0], shape[1])
 	}
 
-	result := tfgo.Exec(root, []tf.Output{batch}, nil, nil)
+	result := tg.Exec(root, []tf.Output{batch}, nil, nil)
 	// Note the cast to [][] and not to [10][3]
 	matrixResult := result[0].Value().([][]int32)
 	var expectedMatrix [][]int32
@@ -51,17 +51,32 @@ func TestBatchify(t *testing.T) {
 }
 
 func TestIsClose(t *testing.T) {
-	root := tfgo.NewRoot()
-	A := tfgo.Const(root, []float32{0.1, 0.2, 0.3, 1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 5e-5})
-	B := tfgo.Const(root, []float32{0.11, 0.2, 0.299, 0, 2e-2, 2e-3, 2e-4, 0, 10})
-	relTol := tfgo.Const(root, float32(1e-3))
-	absTol := tfgo.Const(root, float32(1e-6))
-	isClose := tfgo.IsClose(root, A, B, relTol, absTol)
+	root := tg.NewRoot()
+	A := tg.Const(root, []float32{0.1, 0.2, 0.3, 1e-1, 1e-2, 1e-3, 1e-4, 1e-6, 5e-5})
+	B := tg.Const(root, []float32{0.11, 0.2, 0.299, 0, 2e-2, 2e-3, 2e-4, 0, 10})
+	relTol := tg.Const(root, float32(1e-3))
+	absTol := tg.Const(root, float32(1e-6))
+	isClose := tg.IsClose(root, A, B, relTol, absTol)
 
 	expected := []bool{false, true, false, false, false, false, false, true, false}
-	results := tfgo.Exec(root, []tf.Output{isClose}, nil, nil)
+	results := tg.Exec(root, []tf.Output{isClose}, nil, nil)
 	result := results[0].Value().([]bool)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Expected  %v\n Got  %v", expected, result)
+	}
+}
+
+func TestLoadModel(t *testing.T) {
+	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+
+	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
+	results := model.Exec([]tf.Output{
+		model.Op("LeNetDropout/softmax_linear/Identity", 0),
+	}, map[tf.Output]*tf.Tensor{
+		model.Op("input_", 0): fakeInput,
+	})
+
+	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 10 {
+		t.Errorf("Expected output shape of [1,10], got %v", results[0].Shape())
 	}
 }

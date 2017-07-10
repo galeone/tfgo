@@ -18,7 +18,7 @@ The core data structure of the Tensorflow's Go bindings is the `op.Scope` struct
 Since we're defining a graph, let's start from its root (empty graph)
 
 ```go
-root := tfgo.NewRoot()
+root := tg.NewRoot()
 ```
 
 We can now place nodes into this graphs and connect them. Let's say we want to multiply a matrix for a column vector and then add another column vector to the result.
@@ -120,6 +120,82 @@ func main() {
 ![correlated](https://i.imgur.com/vhYF7o3.jpg)
 
 the list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo/image
+
+# Train in Python, Serve in Go
+
+Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of pyhton and Go code. Below you can find the Python and the Go code.
+Just dig into the example to understand how to serve a trained model with `tfgo`.
+
+**Python code**:
+
+```python
+import sys
+import tensorflow as tf
+from dytb.inputs.predefined.MNIST import MNIST
+from dytb.models.predefined.LeNetDropout import LeNetDropout
+from dytb.train import train
+
+def main():
+    """main executes the operations described in the module docstring"""
+    lenet = LeNetDropout()
+    mnist = MNIST()
+
+    info = train(
+        model=lenet,
+        dataset=mnist,
+        hyperparameters={"epochs": 2},)
+
+    checkpoint_path = info["paths"]["best"]
+
+    with tf.Session() as sess:
+        # Define a new model, import the weights from best model trained
+        # Change the input structure to use a placeholder
+        images = tf.placeholder(tf.float32, shape=(None, 28, 28, 1), name="input_")
+        # define in the default graph the model that uses placeholder as input
+        _ = lenet.get(images, mnist.num_classes)
+
+        # The best checkpoint path contains just one checkpoint, thus the last is the best
+        saver = tf.train.Saver()
+        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
+
+        # Create a builder to export the model
+        builder = tf.saved_model.builder.SavedModelBuilder("export")
+        # Tag the model in order to be capable of restoring it specifying the tag set
+        builder.add_meta_graph_and_variables(sess, ["tag"])
+        builder.save()
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+```
+
+**Go code**:
+
+```go
+package main
+
+import (
+        "fmt"
+        tg "github.com/galeone/tfgo"
+        tf "github.com/tensorflow/tensorflow/tensorflow/go"
+)
+
+func main() {
+        model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+
+        fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
+        results := model.Exec([]tf.Output{
+                model.Op("LeNetDropout/softmax_linear/Identity", 0),
+        }, map[tf.Output]*tf.Tensor{
+                model.Op("input_", 0): fakeInput,
+        })
+
+        predictions := results[0].Value().([][]float32)
+        fmt.Println(predictions)
+}
+```
 
 # Why?
 
