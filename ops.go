@@ -72,6 +72,7 @@ func Exec(scope *op.Scope, tensors []tf.Output, feedDict map[tf.Output]*tf.Tenso
 	}
 
 	if sess, err := tf.NewSession(graph, options); err == nil {
+		defer sess.Close()
 		if results, err := sess.Run(feedDict, tensors, nil); err == nil {
 			return results
 		}
