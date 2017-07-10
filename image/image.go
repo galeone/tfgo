@@ -15,7 +15,7 @@ package image
 
 import (
 	"fmt"
-	"github.com/galeone/tfgo"
+	tg "github.com/galeone/tfgo"
 	"github.com/galeone/tfgo/image/padding"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
@@ -25,8 +25,8 @@ import (
 // ReadJPEG reads the JPEG image whose path is `imagePath` that has `channels` channels
 // it returns an Image
 func ReadJPEG(scope *op.Scope, imagePath string, channels int64) (image *Image) {
-	image = &Image{Tensor: &tfgo.Tensor{}}
-	image.Path = tfgo.NewScope(scope)
+	image = &Image{Tensor: &tg.Tensor{}}
+	image.Path = tg.NewScope(scope)
 	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
 	image.Output = op.DecodeJpeg(image.Path.SubScope("DecodeJpeg"), contents, op.DecodeJpegChannels(channels))
 	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
@@ -37,8 +37,8 @@ func ReadJPEG(scope *op.Scope, imagePath string, channels int64) (image *Image) 
 // ReadPNG reads the PNG image whose path is `imagePath` that has `channels` channels
 // it returns an Image
 func ReadPNG(scope *op.Scope, imagePath string, channels int64) (image *Image) {
-	image = &Image{Tensor: &tfgo.Tensor{}}
-	image.Path = tfgo.NewScope(scope)
+	image = &Image{Tensor: &tg.Tensor{}}
+	image.Path = tg.NewScope(scope)
 	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
 	image.Output = op.DecodePng(image.Path.SubScope("DecodePng"), contents, op.DecodePngChannels(channels))
 	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
@@ -48,8 +48,8 @@ func ReadPNG(scope *op.Scope, imagePath string, channels int64) (image *Image) {
 
 // ReadGIF reads the GIF image whose path is `imagePath` and returns an Image
 func ReadGIF(scope *op.Scope, imagePath string) (image *Image) {
-	image = &Image{Tensor: &tfgo.Tensor{}}
-	image.Path = tfgo.NewScope(scope)
+	image = &Image{Tensor: &tg.Tensor{}}
+	image.Path = tg.NewScope(scope)
 	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
 	image.Output = op.DecodeGif(image.Path.SubScope("DecodeGif"), contents)
 	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
@@ -81,8 +81,8 @@ func NewImage(scope *op.Scope, tensor tf.Output) (image *Image) {
 	if nd != 3 && nd != 4 {
 		panic(fmt.Errorf("tensor should be 3 or 4 D, but has %d dimensions", nd))
 	}
-	image = &Image{Tensor: &tfgo.Tensor{}}
-	image.Path = tfgo.NewScope(scope)
+	image = &Image{Tensor: &tg.Tensor{}}
+	image.Path = tg.NewScope(scope)
 	if nd == 3 {
 		image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), tensor, op.Const(image.Path.SubScope("axis"), []int32{0}))
 	} else {
@@ -175,11 +175,11 @@ func (image *Image) Center() *Image {
 func (image *Image) SaturateCast(dtype tf.DataType) *Image {
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("saturateCast")
-	if tfgo.MinValue(image.Dtype()) < tfgo.MinValue(dtype) {
-		image.Output = op.Maximum(s.SubScope("Maximum"), tfgo.Cast(s, image.Output, tf.Double), op.Const(s.SubScope("Const"), tfgo.MinValue(dtype)))
+	if tg.MinValue(image.Dtype()) < tg.MinValue(dtype) {
+		image.Output = op.Maximum(s.SubScope("Maximum"), tg.Cast(s, image.Output, tf.Double), op.Const(s.SubScope("Const"), tg.MinValue(dtype)))
 	}
-	if tfgo.MaxValue(image.Dtype()) > tfgo.MaxValue(dtype) {
-		image.Output = op.Minimum(s.SubScope("Minimum"), tfgo.Cast(s, image.Output, tf.Double), op.Const(s.SubScope("Const"), tfgo.MaxValue(dtype)))
+	if tg.MaxValue(image.Dtype()) > tg.MaxValue(dtype) {
+		image.Output = op.Minimum(s.SubScope("Minimum"), tg.Cast(s, image.Output, tf.Double), op.Const(s.SubScope("Const"), tg.MaxValue(dtype)))
 	}
 	image = image.Cast(dtype)
 	return image
@@ -192,9 +192,9 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 		return image
 	}
 	s := image.Path.SubScope("convertDtype")
-	if tfgo.IsInteger(image.Dtype()) && tfgo.IsInteger(dtype) {
-		scaleIn := tfgo.MaxValue(image.Dtype())
-		scaleOut := tfgo.MaxValue(dtype)
+	if tg.IsInteger(image.Dtype()) && tg.IsInteger(dtype) {
+		scaleIn := tg.MaxValue(image.Dtype())
+		scaleOut := tg.MaxValue(dtype)
 		if scaleIn > scaleOut {
 			scale := op.Const(s.SubScope("Const"), int64(scaleIn+1)/int64(scaleOut+1))
 			image.Output = op.Div(s.SubScope("Div"), image.Output, scale)
@@ -213,17 +213,17 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 		}
 		return image
-	} else if tfgo.IsFloat(image.Dtype()) && tfgo.IsFloat(dtype) {
+	} else if tg.IsFloat(image.Dtype()) && tg.IsFloat(dtype) {
 		image = image.Cast(dtype)
 		return image
 	} else {
-		if tfgo.IsInteger(image.Dtype()) {
+		if tg.IsInteger(image.Dtype()) {
 			image = image.Cast(dtype)
-			scale := op.Const(s.SubScope("Const"), float64(1.0/tfgo.MaxValue(image.Dtype())))
+			scale := op.Const(s.SubScope("Const"), float64(1.0/tg.MaxValue(image.Dtype())))
 			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 		} else {
-			scale := op.Const(s.SubScope("Const"), float64(0.5+tfgo.MaxValue(dtype)))
-			image.Output = op.Mul(s.SubScope("Mul"), tfgo.Cast(s, image.Output, tf.Double), scale)
+			scale := op.Const(s.SubScope("Const"), float64(0.5+tg.MaxValue(dtype)))
+			image.Output = op.Mul(s.SubScope("Mul"), tg.Cast(s, image.Output, tf.Double), scale)
 			if saturate {
 				return image.SaturateCast(dtype)
 			}
@@ -255,12 +255,12 @@ func (image *Image) AdjustGamma(gamma, gain float32) *Image {
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("adjustGamma")
 	dtype := image.Dtype()
-	scale := op.Const(s.SubScope("scale"), tfgo.MaxValue(dtype)-tfgo.MinValue(dtype))
-	scaleTimesGain := op.Const(s.SubScope("scaleTimesGain"), (tfgo.MaxValue(dtype)-tfgo.MinValue(dtype))*float64(gain))
+	scale := op.Const(s.SubScope("scale"), tg.MaxValue(dtype)-tg.MinValue(dtype))
+	scaleTimesGain := op.Const(s.SubScope("scaleTimesGain"), (tg.MaxValue(dtype)-tg.MinValue(dtype))*float64(gain))
 	// adjusted_img = (img / scale) ** gamma * scale * gain
 	image.Output = op.Mul(s.SubScope("Mul"), op.Pow(
 		s.SubScope("Pow"), op.Div(s.SubScope("Div"), image.Cast(tf.Float).Output, scale), op.Const(s.SubScope("gamma"), gamma)),
-		tfgo.Cast(s, scaleTimesGain, tf.Float))
+		tg.Cast(s, scaleTimesGain, tf.Float))
 	return image
 }
 
@@ -436,7 +436,7 @@ func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding paddin
 	strides := []int64{1, stride.Y, stride.X, 1}
 	rates := []int64{1, rate.Y, rate.X, 1}
 	s := image.Path.SubScope("Dilatation2d")
-	filter = tfgo.Cast(s, filter, image.Dtype())
+	filter = tg.Cast(s, filter, image.Dtype())
 	image.Output = op.Dilation2D(s, image.Output, filter, strides, rates, padding.String())
 	return image
 }
@@ -449,7 +449,7 @@ func (image *Image) Erode(filter tf.Output, stride, rate Stride, padding padding
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("Erode")
 	// Negate the input
-	negativeOne := tfgo.Cast(s, op.Const(s.SubScope("negative"), -1.), image.Dtype())
+	negativeOne := tg.Cast(s, op.Const(s.SubScope("negative"), -1.), image.Dtype())
 	image = image.Mul(negativeOne)
 	// Flip the kernel
 	filter = op.ReverseV2(s.SubScope("ReverseV2"), filter, op.Const(s.SubScope("axis"), []int32{0, 1}))

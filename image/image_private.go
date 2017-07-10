@@ -15,7 +15,7 @@ package image
 
 import (
 	"fmt"
-	"github.com/galeone/tfgo"
+	tg "github.com/galeone/tfgo"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 )
@@ -26,7 +26,7 @@ func boxes2batch(scope *op.Scope, boxes []Box) tf.Output {
 	for idx, box := range boxes {
 		tfboxes = append(tfboxes, op.Const(s.SubScope(fmt.Sprint("idx_", idx)), []float32{box.Start.Y, box.Start.X, box.End.Y, box.End.X}))
 	}
-	return tfgo.Batchify(s, tfboxes)
+	return tg.Batchify(s, tfboxes)
 }
 
 func sizes2batch(scope *op.Scope, sizes []Size) tf.Output {
@@ -35,7 +35,7 @@ func sizes2batch(scope *op.Scope, sizes []Size) tf.Output {
 	for idx, size := range sizes {
 		tfsizes = append(tfsizes, op.Const(s.SubScope(fmt.Sprint("idx_", idx)), []float32{size.Height, size.Width}))
 	}
-	return tfgo.Batchify(s, tfsizes)
+	return tg.Batchify(s, tfsizes)
 }
 
 func points2batch(scope *op.Scope, points []Point) tf.Output {
@@ -44,5 +44,5 @@ func points2batch(scope *op.Scope, points []Point) tf.Output {
 	for idx, point := range points {
 		tfpoints = append(tfpoints, op.Const(s.SubScope(fmt.Sprint("idx_", idx)), []float32{point.X, point.Y}))
 	}
-	return tfgo.Batchify(s, tfpoints)
+	return tg.Batchify(s, tfpoints)
 }
