@@ -72,7 +72,7 @@ The code below does that, showing the different results achieved using correlati
 package main
 
 import (
-        "github.com/galeone/tfgo"
+        tg "github.com/galeone/tfgo"
         "github.com/galeone/tfgo/image"
         "github.com/galeone/tfgo/image/filter"
         "github.com/galeone/tfgo/image/padding"
