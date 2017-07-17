@@ -208,7 +208,7 @@ Also, tfgo brings GPU computations to Go and allows writing parallel code withou
 
 I love contributions. Seriously. Having people that share your same interests and want to face your same challenges it's something awesome.
 
-If you'd like to contribute, just dig in the code and see what can be added or improved. Start a dicussion opening an issue and let's talk about it.
+If you'd like to contribute, just dig in the code and see what can be added or improved. Start a discussion opening an issue and let's talk about it.
 
 Just follow the same design I use into the `image` package ("override" the same `Tensor` methods, document the methods, **test** your changes, ...)
 
