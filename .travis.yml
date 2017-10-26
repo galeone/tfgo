@@ -1,0 +1,12 @@
+language: go
+sudo: true
+go:
+    -tip
+before_install:
+  - go get github.com/mattn/goveralls
+  - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.3.0.tar.gz" | sudo tar -C /usr/local -xz
+  - sudo ldconfig
+  - go get github.com/tensorflow/tensorflow/tensorflow/go
+  - go test github.com/tensorflow/tensorflow/tensorflow/go
+script:
+  - $GOPATH/bin/goveralls -service=travis-ci
