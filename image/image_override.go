@@ -19,7 +19,7 @@ import (
 
 // ------
 // ""Overridden"" methods from *Tensor, that in *Tensor
-// return *Tensor. Here shoudl change the inner *Tensor
+// return *Tensor. Here should change the inner *Tensor
 // but returning a *Image value.
 // Overridden methods don't need to check for scope error, because
 // they use *Tensor methods that already check for this

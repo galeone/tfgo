@@ -39,7 +39,7 @@ func SobelX(scope *op.Scope) tf.Output {
 	return op.Const(scope.SubScope("SobelX"), sobelX)
 }
 
-// SobelX returns a constant tensor with shape [3,3,1,1]
+// SobelY returns a constant tensor with shape [3,3,1,1]
 // containing the values of the Sobel operator along Y
 // Convolving a 2D signal (tensor with shape [height, widht, 1])
 // gives as output the directional derivative along the Y axis of the signal
