@@ -86,12 +86,12 @@ func main() {
         grayImg = grayImg.Scale(0, 255)
 
         // Edge detection using sobel filter: convolution
-        Gx := grayImg.Convolve(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.SAME).Clone()
-        Gy := grayImg.Convolve(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.SAME).Clone()
+        Gx := grayImg.Clone().Convolve(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.SAME)
+        Gy := grayImg.Clone().Convolve(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.SAME)
         convoluteEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).EncodeJPEG()
 
-        Gx = grayImg.Correlate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.SAME).Clone()
-        Gy = grayImg.Correlate(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.SAME).Clone()
+        Gx = grayImg.Clone().Correlate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.SAME)
+        Gy = grayImg.Clone().Correlate(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.SAME)
         correlateEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).EncodeJPEG()
 
         results := tg.Exec(root, []tf.Output{convoluteEdges, correlateEdges}, nil, &tf.SessionOptions{})
