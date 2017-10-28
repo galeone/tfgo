@@ -21,7 +21,11 @@ import (
 // Tensor is an high level abstraction for the
 // tf.Output structure, associating a scope to the Tensor
 type Tensor struct {
-	Path   *op.Scope
+	// Root: Each tensor mantains a pointer to the graph root
+	Root *op.Scope
+	// Path is the current Tensor full path
+	Path *op.Scope
+	// Output is the Tensor content
 	Output tf.Output
 }
 
@@ -29,6 +33,7 @@ type Tensor struct {
 // Place the cloned tensor within the specified scope
 func NewTensor(scope *op.Scope, tfout tf.Output) (tensor *Tensor) {
 	tensor = new(Tensor)
+	tensor.Root = scope
 	tensor.Path = NewScope(scope)
 	// Copy the tensor to a new node in the graph
 	tensor.Output = op.Identity(tensor.Path.SubScope("Identity"), tfout)
@@ -87,9 +92,11 @@ func (tensor *Tensor) Dtype() tf.DataType {
 // Clone returns a copy of the current tensor in a new scope
 // Clone must be used when one want to create a different tensor
 // from the output of an operation.
+// The new node is placed at the same level of the current tensor
+// it can be seen as a twin tensor
 func (tensor *Tensor) Clone() *Tensor {
 	defer tensor.Check()
-	scope := NewScope(tensor.Path)
+	scope := NewScope(tensor.Root)
 	return NewTensor(scope, tensor.Output)
 }
 
