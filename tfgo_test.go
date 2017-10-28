@@ -125,6 +125,7 @@ func TestTensorPanic(t *testing.T) {
 	if tensorA == nil {
 		t.Error("Cast operation shouldn't return nil")
 	}
+	tensorA.Check()
 
 }
 
@@ -215,17 +216,33 @@ func TestLoadModel(t *testing.T) {
 
 func TestIsIntegerFloat(t *testing.T) {
 	root := tg.NewRoot()
+	A := tg.Const(root, int64(0))
 	B := tg.Const(root, []float32{0.11})
 
 	if tg.IsInteger(B.DataType()) {
 		t.Error("Expected a float type, but integer found")
 	}
+	if !tg.IsInteger(A.DataType()) {
+		t.Error("A supposed to be integer, but IsInteger said no")
+	}
+
+	if tg.IsFloat(A.DataType()) {
+		t.Error("A is integer, but IsFloat returned true")
+	}
+
 	if !tg.IsFloat(B.DataType()) {
 		t.Error("Expected a float type, but float32 has been considered not float")
 	}
 }
 
 func TestMaxMinValue(t *testing.T) {
+	defer func() {
+		// Panic on min/max on unsupported dtype
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
 	root := tg.NewRoot()
 	A := tg.Const(root, int64(0))
 	B := tg.Const(root, float64(0))
@@ -245,4 +262,78 @@ func TestMaxMinValue(t *testing.T) {
 	if tg.MinValue(B.DataType()) != math.SmallestNonzeroFloat64 {
 		t.Errorf("expected MinValue of dype float64 to be equal to math.SmallestNonzeroFloat64 but got %v", tg.MinValue(B.DataType()))
 	}
+
+	A = tg.Cast(root, A, tf.Int32)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt32 {
+		t.Errorf("expected MaxValue of dype int32 to be equal to math.MaxInt32, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MinValue(A.DataType()) != math.MinInt32 {
+		t.Errorf("expected MinValue of dype int32 to be equal to math.MinInt32, but got %v", tg.MinValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Int16)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt16 {
+		t.Errorf("expected MaxValue of dype int16 to be equal to math.MaxInt16, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MinValue(A.DataType()) != math.MinInt16 {
+		t.Errorf("expected MinValue of dype int16 to be equal to math.MinInt16, but got %v", tg.MinValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Int8)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt8 {
+		t.Errorf("expected MaxValue of dype int8 to be equal to math.MaxInt8, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MinValue(A.DataType()) != math.MinInt8 {
+		t.Errorf("expected MinValue of dype int8 to be equal to math.MinInt8, but got %v", tg.MinValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Uint8)
+
+	if tg.MaxValue(A.DataType()) != math.MaxUint8 {
+		t.Errorf("expected MaxValue of dype uint8 to be equal to math.MaxUint8, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MinValue(A.DataType()) != 0 {
+		t.Errorf("expected MinValue of dype uint8 to be equal to 0, but got %v", tg.MinValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Uint16)
+
+	if tg.MaxValue(A.DataType()) != math.MaxUint16 {
+		t.Errorf("expected MaxValue of dype uint16 to be equal to math.MaxUint16, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MinValue(A.DataType()) != 0 {
+		t.Errorf("expected MinValue of dype uint16 to be equal to 0, but got %v", tg.MinValue(A.DataType()))
+	}
+
+	B = tg.Cast(root, B, tf.Float)
+	if tg.MaxValue(B.DataType()) != math.MaxFloat32 {
+		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32 but got %v", tg.MaxValue(B.DataType()))
+	}
+
+	if tg.MinValue(B.DataType()) != math.SmallestNonzeroFloat32 {
+		t.Errorf("expected MinValue of dype float32 to be equal to math.SmallestNonzeroFloat32 but got %v", tg.MinValue(B.DataType()))
+	}
+
+	B = tg.Cast(root, B, tf.Half)
+	if tg.MaxValue(B.DataType()) != math.MaxFloat32/math.Pow(2, 16) {
+		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32  / math.Pow(2, 16) but got %v", tg.MaxValue(B.DataType()))
+	}
+
+	if tg.MinValue(B.DataType()) != 6.10*math.Pow10(-5) {
+		t.Errorf("expected MinValue of dype float32 to be equal to 6.1*10^{-5} but got %v", tg.MinValue(B.DataType()))
+	}
+
+	// cause 2 panics
+	s := tg.Const(root, "test")
+	tg.MinValue(s.DataType())
+	tg.MaxValue(s.DataType())
+
 }
