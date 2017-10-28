@@ -75,8 +75,9 @@ func Exec(scope *op.Scope, tensors []tf.Output, feedDict map[tf.Output]*tf.Tenso
 		defer sess.Close()
 		if results, err := sess.Run(feedDict, tensors, nil); err == nil {
 			return results
+		} else {
+			panic(err)
 		}
-		panic(err)
 	} else {
 		panic(err)
 	}
