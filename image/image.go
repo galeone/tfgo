@@ -24,37 +24,39 @@ import (
 
 // ReadJPEG reads the JPEG image whose path is `imagePath` that has `channels` channels
 // it returns an Image
-func ReadJPEG(scope *op.Scope, imagePath string, channels int64) (image *Image) {
-	image = &Image{Tensor: &tg.Tensor{}}
-	image.Path = tg.NewScope(scope)
-	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
-	image.Output = op.DecodeJpeg(image.Path.SubScope("DecodeJpeg"), contents, op.DecodeJpegChannels(channels))
-	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
-	image = image.Scale(0, 1)
-	return image
+func ReadJPEG(scope *op.Scope, imagePath string, channels int64) *Image {
+	scope = tg.NewScope(scope)
+	contents := op.ReadFile(scope.SubScope("ReadFile"), op.Const(scope.SubScope("filename"), imagePath))
+	output := op.DecodeJpeg(scope.SubScope("DecodeJpeg"), contents, op.DecodeJpegChannels(channels))
+	output = op.ExpandDims(scope.SubScope("ExpandDims"), output, op.Const(scope.SubScope("axis"), []int32{0}))
+	image := &Image{
+		Tensor: tg.NewTensor(scope, output)}
+	return image.Scale(0, 1)
 }
 
 // ReadPNG reads the PNG image whose path is `imagePath` that has `channels` channels
 // it returns an Image
-func ReadPNG(scope *op.Scope, imagePath string, channels int64) (image *Image) {
-	image = &Image{Tensor: &tg.Tensor{}}
-	image.Path = tg.NewScope(scope)
-	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
-	image.Output = op.DecodePng(image.Path.SubScope("DecodePng"), contents, op.DecodePngChannels(channels))
-	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
-	image = image.Scale(0, 1)
-	return image
+func ReadPNG(scope *op.Scope, imagePath string, channels int64) *Image {
+	scope = tg.NewScope(scope)
+	contents := op.ReadFile(scope.SubScope("ReadFile"), op.Const(scope.SubScope("filename"), imagePath))
+	output := op.DecodePng(scope.SubScope("DecodePng"), contents, op.DecodePngChannels(channels))
+	output = op.ExpandDims(scope.SubScope("ExpandDims"), output, op.Const(scope.SubScope("axis"), []int32{0}))
+	image := &Image{
+		Tensor: tg.NewTensor(scope, output)}
+	return image.Scale(0, 1)
 }
 
 // ReadGIF reads the GIF image whose path is `imagePath` and returns an Image
-func ReadGIF(scope *op.Scope, imagePath string) (image *Image) {
-	image = &Image{Tensor: &tg.Tensor{}}
-	image.Path = tg.NewScope(scope)
-	contents := op.ReadFile(image.Path.SubScope("ReadFile"), op.Const(image.Path.SubScope("filename"), imagePath))
-	image.Output = op.DecodeGif(image.Path.SubScope("DecodeGif"), contents)
-	image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), image.Output, op.Const(image.Path.SubScope("axis"), []int32{0}))
-	image = image.Scale(0, 1)
-	return image
+func ReadGIF(scope *op.Scope, imagePath string) *Image {
+	scope = tg.NewScope(scope)
+	contents := op.ReadFile(scope.SubScope("ReadFile"), op.Const(scope.SubScope("filename"), imagePath))
+	output := op.DecodeGif(scope.SubScope("DecodeGif"), contents)
+	if output.Shape().NumDimensions() == 3 {
+		output = op.ExpandDims(scope.SubScope("ExpandDims"), output, op.Const(scope.SubScope("axis"), []int32{0}))
+	}
+	image := &Image{
+		Tensor: tg.NewTensor(scope, output)}
+	return image.Scale(0, 1)
 }
 
 // Read search for the `imagePath` extensions and uses the Read<format> function
@@ -76,20 +78,22 @@ func Read(scope *op.Scope, imagePath string, channels int64) *Image {
 
 // NewImage creates an *Image from a 3 or 4D input tensor
 // Place the created image within the specified scope
-func NewImage(scope *op.Scope, tensor tf.Output) (image *Image) {
+func NewImage(scope *op.Scope, tensor tf.Output) *Image {
 	nd := tensor.Shape().NumDimensions()
 	if nd != 3 && nd != 4 {
 		panic(fmt.Errorf("tensor should be 3 or 4 D, but has %d dimensions", nd))
 	}
-	image = &Image{Tensor: &tg.Tensor{}}
-	image.Path = tg.NewScope(scope)
+	scope = tg.NewScope(scope)
+	var output tf.Output
 	if nd == 3 {
-		image.Output = op.ExpandDims(image.Path.SubScope("ExpandDims"), tensor, op.Const(image.Path.SubScope("axis"), []int32{0}))
+		output = op.ExpandDims(scope.SubScope("ExpandDims"), tensor, op.Const(scope.SubScope("axis"), []int32{0}))
 	} else {
-		image.Output = tensor
+		output = tensor
 	}
 	// Copy the tensor to a new node in the graph
-	image.Output = op.Identity(image.Path.SubScope("Identity"), image.Output)
+	output = op.Identity(scope.SubScope("Identity"), output)
+	image := &Image{
+		Tensor: tg.NewTensor(scope, output)}
 	image = image.Scale(0, 1)
 	return image
 }
