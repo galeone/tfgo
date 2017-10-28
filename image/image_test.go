@@ -16,6 +16,8 @@ package image_test
 import (
 	tg "github.com/galeone/tfgo"
 	"github.com/galeone/tfgo/image"
+	"github.com/galeone/tfgo/image/filter"
+	"github.com/galeone/tfgo/image/padding"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 	"reflect"
@@ -62,6 +64,32 @@ func TestReadGIF(t *testing.T) {
 	if results[0].DataType() != tf.Float {
 		t.Errorf("Expected dtype %d but got %d", tf.Float, results[0].DataType())
 	}
+}
+
+func TestReadGIFWithRead(t *testing.T) {
+	root := tg.NewRoot()
+	img1 := image.Read(root, gifImagePath, 3)
+	results := tg.Exec(root, []tf.Output{img1.Value()}, nil, &tf.SessionOptions{})
+	if !reflect.DeepEqual(results[0].Shape(), []int64{140, 591, 705, 3}) {
+		t.Errorf("Expected shape [140, 591, 705, 3] but got %v", results[0].Shape())
+	}
+	if results[0].DataType() != tf.Float {
+		t.Errorf("Expected dtype %d but got %d", tf.Float, results[0].DataType())
+	}
+}
+
+func TestNewImage(t *testing.T) {
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 3)
+
+	// img is a 4-D tensor under the hood
+	clone := image.NewImage(root, img.Output)
+	// Extract 4d tensor, remove batch size, use NewImage -> adds first dim -> 4d
+	clone3d := image.NewImage(root, op.Squeeze(root.SubScope("Squeeze"), clone.Output, op.SqueezeSqueezeDims([]int64{0})))
+	if !reflect.DeepEqual(clone.Shape64(true), clone3d.Shape64(true)) {
+		t.Errorf("clone shape = %v must be equal to %v shape, but is not", clone.Shape64(true), clone3d.Shape64(true))
+	}
+
 }
 
 func TestResizeArea(t *testing.T) {
@@ -145,6 +173,38 @@ func TestAdd(t *testing.T) {
 	if floatNoisyImage[0][0][0] != (floatImg[0][0][0] + floatNoise[0][0][0]) {
 		t.Errorf("Add img + noise should be coherent but got: %f != %f + %f", floatNoisyImage[0][0][0], floatImg[0][0][0], floatNoise[0][0][0])
 	}
+}
+
+func TestConvolveCorrelate(t *testing.T) {
+	root := tg.NewRoot()
+	grayImg := image.Read(root, pngImagePath, 1)
+	grayImg = grayImg.Scale(0, 255)
+
+	// Edge detection using sobel filter: convolution
+	Gx := grayImg.Clone().Convolve(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.SAME)
+	Gy := grayImg.Clone().Convolve(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.SAME)
+	// *image.Value -> revemo batch size if = 1
+	convoluteEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).Value()
+
+	// correlation
+	Gx = grayImg.Clone().Correlate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.VALID)
+	Gy = grayImg.Clone().Correlate(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.VALID)
+	correlateEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).Value()
+
+	results := tg.Exec(root, []tf.Output{convoluteEdges, correlateEdges}, nil, &tf.SessionOptions{})
+	if !reflect.DeepEqual(results[0].Shape(), []int64{180, 180, 1}) {
+		t.Errorf("Expected shape [180, 180, 1] but got %v", results[0].Shape())
+	}
+	// Same padding -> equal size
+	if !reflect.DeepEqual(results[0].Shape(), []int64{180, 180, 1}) {
+		t.Errorf("Convolution with SAME padding should produce output shape = input shape, but got: %v != %v", results[0].Shape(), []int64{180, 180, 1})
+	}
+
+	// Valid padding -> output shape < input shape
+	if reflect.DeepEqual(results[1], []int64{180, 180, 1}) {
+		t.Errorf("Convolution/correlation with VALID padding should produce output shape < input shape, but they are equal to: %v", results[1].Shape())
+	}
+
 }
 
 func TestAdjustBrightness(t *testing.T) {
