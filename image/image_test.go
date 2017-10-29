@@ -246,3 +246,45 @@ func TestRGB2Grayscale(t *testing.T) {
 		t.Errorf("Expected [80, 80, 1] but got %v", results[0].Shape())
 	}
 }
+
+func TestCropAndResize(t *testing.T) {
+	root := tg.NewRoot()
+	crop := image.Read(root, pngImagePath, 3).CropAndResize(image.Box{
+		Start: image.Point{X: 0.2, Y: 0.2},
+		End:   image.Point{X: 0.5, Y: 0.8}},
+		image.Size{Height: 200, Width: 200})
+
+	results := tg.Exec(root, []tf.Output{crop.Value()}, nil, &tf.SessionOptions{})
+	if !reflect.DeepEqual(results[0].Shape(), []int64{200, 200, 3}) {
+		t.Errorf("Expected the crop and resize with shape 200x200, but got: %v", results[0].Shape())
+	}
+}
+
+func TestDrawBB(t *testing.T) {
+	root := tg.NewRoot()
+	singleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{image.Box{
+		Start: image.Point{X: 0.2, Y: 0.2},
+		End:   image.Point{X: 0.5, Y: 0.8}}})
+
+	doubleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{image.Box{
+		Start: image.Point{X: 0.2, Y: 0.2},
+		End:   image.Point{X: 0.5, Y: 0.8}}, image.Box{
+		Start: image.Point{X: 0.05, Y: 0.27},
+		End:   image.Point{X: 0.7, Y: 0.9}}})
+
+	// If no panic is thrown, we suppose that tensorflow works and drawed the boxes
+	tg.Exec(root, []tf.Output{singleBox.Value(), doubleBox.Value()}, nil, &tf.SessionOptions{})
+}
+
+func TestExtractGlimpses(t *testing.T) {
+	root := tg.NewRoot()
+	twoGlimpses := image.Read(root, pngImagePath, 3).ExtractGlimpse(image.Size{Height: 200, Width: 300},
+		image.Point{X: 0.2, Y: 0.2}, op.ExtractGlimpseNormalized(true), op.ExtractGlimpseCentered(false))
+	// normalized = true and centered = false -> coordinates in [0,1]
+	results := tg.Exec(root, []tf.Output{twoGlimpses}, nil, &tf.SessionOptions{})
+	glimpses := results[0]
+	if !reflect.DeepEqual(glimpses.Shape(), []int64{1, 200, 300, 3}) {
+		t.Errorf("Expected 1 glimpse 200x300x3, got: %v", glimpses.Shape())
+	}
+
+}
