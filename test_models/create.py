@@ -8,7 +8,6 @@
 """Use DyTB to define and train a model. Then redefines it, changing the input
 while restoring the learned weights of the best model. Then export it in a protobuf."""
 
-
 import sys
 import tensorflow as tf
 from dytb.inputs.predefined.MNIST import MNIST
@@ -21,17 +20,15 @@ def main():
     lenet = LeNetDropout()
     mnist = MNIST()
 
-    info = train(
-        model=lenet,
-        dataset=mnist,
-        hyperparameters={"epochs": 2},)
+    info = train(model=lenet, dataset=mnist, hyperparameters={"epochs": 1})
 
     checkpoint_path = info["paths"]["best"]
 
     with tf.Session() as sess:
         # Define a new model, import the weights from best model trained
         # Change the input structure to use a placeholder
-        images = tf.placeholder(tf.float32, shape=(None, 28, 28, 1), name="input_")
+        images = tf.placeholder(
+            tf.float32, shape=(None, 28, 28, 1), name="input_")
         # define in the default graph the model that uses placeholder as input
         _ = lenet.get(images, mnist.num_classes)
 
