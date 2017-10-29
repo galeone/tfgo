@@ -316,7 +316,7 @@ func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResi
 	image.Output = op.CropAndResize(s.SubScope("CropAndResize"),
 		image.Output,
 		boxes,
-		op.Const(s.SubScope("boxInd"), int32(0)),
+		op.Const(s.SubScope("boxInd"), []int32{0}),
 		op.Const(s.SubScope("cropSize"), []int32{int32(size.Height), int32(size.Width)}))
 	return image
 }
@@ -325,7 +325,10 @@ func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResi
 func (image *Image) DrawBoundingBoxes(boxes []Box) *Image {
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("drawBoundingBoxes")
-	image.Output = op.DrawBoundingBoxes(s.SubScope("DrawBoundingBoxes"), image.Output, boxes2batch(s, boxes))
+	image.Output = op.DrawBoundingBoxes(
+		s.SubScope("DrawBoundingBoxes"),
+		image.Output,
+		op.ExpandDims(s.SubScope("ExpandDims"), boxes2batch(s, boxes), op.Const(s.SubScope("axis"), []int32{0})))
 	return image
 }
 
@@ -343,13 +346,14 @@ func (image *Image) EncodePNG(optional ...op.EncodePngAttr) tf.Output {
 	return op.EncodePng(image.Path.SubScope("EncodePng"), image.Value(), optional...)
 }
 
-// ExtractGlimpse extracts a set of glimpses with the specified size at the different offests
-func (image *Image) ExtractGlimpse(size Size, offsets []Point, optional ...op.ExtractGlimpseAttr) tf.Output {
+// ExtractGlimpse extracts a glimpse with the specified size at the specified offset
+func (image *Image) ExtractGlimpse(size Size, offset Point, optional ...op.ExtractGlimpseAttr) tf.Output {
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("extractGlimpse")
+	offsets := points2batch(s, []Point{offset})
 	return op.ExtractGlimpse(s.SubScope("ExtractGlimpse"),
 		image.Output,
-		op.Const(s.SubScope("size"), []float32{size.Width, size.Height}), points2batch(s, offsets),
+		op.Const(s.SubScope("size"), []int32{int32(size.Height), int32(size.Width)}), offsets,
 		optional...)
 }
 
