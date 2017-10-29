@@ -21,6 +21,10 @@ import (
 // Batchify creates a batch of tensors, concatenating them along the first dimension
 func Batchify(scope *op.Scope, tensors []tf.Output) tf.Output {
 	s := scope.SubScope("batchify")
+	// Batchify a single value, means add batch dimension and return
+	if len(tensors) == 1 {
+		return op.ExpandDims(s.SubScope("ExpandDims"), tensors[0], op.Const(s.SubScope("axis"), []int32{0}))
+	}
 	var tensors4d []tf.Output
 	for _, tensor := range tensors {
 		tensors4d = append(tensors4d, op.ExpandDims(s.SubScope("ExpandDims"), tensor, op.Const(s.SubScope("axis"), []int32{0})))
