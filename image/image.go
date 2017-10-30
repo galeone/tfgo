@@ -50,10 +50,8 @@ func ReadPNG(scope *op.Scope, imagePath string, channels int64) *Image {
 func ReadGIF(scope *op.Scope, imagePath string) *Image {
 	scope = tg.NewScope(scope)
 	contents := op.ReadFile(scope.SubScope("ReadFile"), op.Const(scope.SubScope("filename"), imagePath))
+	// DecodeGif returns a Tensor of type uint8. 4-D with shape [num_frames, height, width, 3]. RGB order
 	output := op.DecodeGif(scope.SubScope("DecodeGif"), contents)
-	if output.Shape().NumDimensions() == 3 {
-		output = op.ExpandDims(scope.SubScope("ExpandDims"), output, op.Const(scope.SubScope("axis"), []int32{0}))
-	}
 	image := &Image{
 		Tensor: tg.NewTensor(scope, output)}
 	return image.Scale(0, 1)
@@ -200,7 +198,7 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 		scaleIn := tg.MaxValue(image.Dtype())
 		scaleOut := tg.MaxValue(dtype)
 		if scaleIn > scaleOut {
-			scale := op.Const(s.SubScope("Const"), int64(scaleIn+1)/int64(scaleOut+1))
+			scale := tg.Cast(s, op.Const(s.SubScope("Const"), int64(scaleIn+1)/int64(scaleOut+1)), image.Dtype())
 			image.Output = op.Div(s.SubScope("Div"), image.Output, scale)
 			if saturate {
 				return image.SaturateCast(dtype)
@@ -208,12 +206,13 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 			image = image.Cast(dtype)
 			return image
 		}
-		scale := op.Const(s.SubScope("Const"), int64(scaleOut+1)/int64(scaleIn+1))
 		if saturate {
 			image = image.SaturateCast(dtype)
+			scale := tg.Cast(s, op.Const(s.SubScope("Const"), int64(scaleOut+1)/int64(scaleIn+1)), image.Dtype())
 			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 		} else {
 			image = image.Cast(dtype)
+			scale := tg.Cast(s, op.Const(s.SubScope("Const"), int64(scaleOut+1)/int64(scaleIn+1)), image.Dtype())
 			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 		}
 		return image
@@ -223,11 +222,11 @@ func (image *Image) ConvertDtype(dtype tf.DataType, saturate bool) *Image {
 	} else {
 		if tg.IsInteger(image.Dtype()) {
 			image = image.Cast(dtype)
-			scale := op.Const(s.SubScope("Const"), float64(1.0/tg.MaxValue(image.Dtype())))
+			scale := tg.Cast(s, op.Const(s.SubScope("Const"), float64(1.0/tg.MaxValue(image.Dtype()))), image.Dtype())
 			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 		} else {
-			scale := op.Const(s.SubScope("Const"), float64(0.5+tg.MaxValue(dtype)))
-			image.Output = op.Mul(s.SubScope("Mul"), tg.Cast(s, image.Output, tf.Double), scale)
+			scale := tg.Cast(s, op.Const(s.SubScope("Const"), float64(0.5+tg.MaxValue(dtype))), image.Dtype())
+			image.Output = op.Mul(s.SubScope("Mul"), image.Output, scale)
 			if saturate {
 				return image.SaturateCast(dtype)
 			}
@@ -262,9 +261,11 @@ func (image *Image) AdjustGamma(gamma, gain float32) *Image {
 	scale := op.Const(s.SubScope("scale"), tg.MaxValue(dtype)-tg.MinValue(dtype))
 	scaleTimesGain := op.Const(s.SubScope("scaleTimesGain"), (tg.MaxValue(dtype)-tg.MinValue(dtype))*float64(gain))
 	// adjusted_img = (img / scale) ** gamma * scale * gain
-	image.Output = op.Mul(s.SubScope("Mul"), op.Pow(
-		s.SubScope("Pow"), op.Div(s.SubScope("Div"), image.Cast(tf.Float).Output, scale), op.Const(s.SubScope("gamma"), gamma)),
-		tg.Cast(s, scaleTimesGain, tf.Float))
+	image.Output = op.Mul(s.SubScope("Mul"),
+		op.Pow(s.SubScope("Pow"),
+			op.Div(s.SubScope("Div"), image.Cast(tf.Double).Output, scale),
+			op.Const(s.SubScope("gamma"), float64(gamma))),
+		scaleTimesGain)
 	return image
 }
 
@@ -287,24 +288,40 @@ func (image *Image) AdjustSaturation(saturationFactor float32) *Image {
 // CentralCrop extracts from the center of the image a portion of image with an area equals to the centralFraction
 func (image *Image) CentralCrop(centralFraction float32) *Image {
 	defer image.Tensor.Check()
+
 	s := image.Path.SubScope("centralCrop")
-	shape := image.Shape32(false)
-	//depth := shape[2]
-	fractionOffset := int32(1 / ((1 - centralFraction) / 2.0))
-	rect := Rectangle{
-		Start: Point{
-			Y: float32(shape[0] / fractionOffset),
-			X: float32(shape[1] / fractionOffset),
-		},
-		Extent: Size{
-			Height: float32(shape[0] - (shape[0]/fractionOffset)*2),
-			Width:  float32(shape[1] - (shape[1]/fractionOffset)*2),
-		},
-	}
+	tfCentralFraction := tg.Const(s.SubScope("centralFraction"), centralFraction)
+
+	shape := op.Shape(s.SubScope("shape"), image.Output)
+	gatherScope := s.SubScope("gatherHeight")
+	height := op.Squeeze(s.SubScope("squeeze"), tg.Cast(s, op.Gather(gatherScope, shape, tg.Const(gatherScope.SubScope("indices"), []int32{1})), tf.Float))
+	gatherScope = s.SubScope("gatherWidth")
+	width := op.Squeeze(s.SubScope("squeeze"), tg.Cast(s, op.Gather(gatherScope, shape, tg.Const(gatherScope.SubScope("indices"), []int32{2})), tf.Float))
+
+	two := tg.Const(s.SubScope("two"), float32(2))
+	hStart := op.Div(s.SubScope("div"),
+		op.Sub(s.SubScope("Sub"),
+			height,
+			op.Mul(s.SubScope("Mul"), height, tfCentralFraction)),
+		two)
+
+	wStart := op.Div(s.SubScope("div"),
+		op.Sub(s.SubScope("Sub"),
+			width,
+			op.Mul(s.SubScope("Mul"), width, tfCentralFraction)),
+		two)
+
+	hSize := op.Sub(s.SubScope("Sub"), height,
+		op.Mul(s.SubScope("Mul"), hStart, two))
+	wSize := op.Sub(s.SubScope("Sub"), width,
+		op.Mul(s.SubScope("Mul"), wStart, two))
+
+	zero := tg.Const(s.SubScope("zero"), int32(0))
+	negOne := tg.Const(s.SubScope("negOne"), int32(-1))
 
 	image.Output = op.Slice(s.SubScope("Slice"), image.Output,
-		op.Const(s.SubScope("begin"), []float32{0, rect.Start.Y, rect.Start.X, 0}),
-		op.Const(s.SubScope("size"), []float32{-1, rect.Extent.Height, rect.Extent.Width, -1}))
+		op.Pack(s.SubScope("begin"), []tf.Output{zero, tg.Cast(s, hStart, tf.Int32), tg.Cast(s, wStart, tf.Int32), zero}),
+		op.Pack(s.SubScope("size"), []tf.Output{negOne, tg.Cast(s, hSize, tf.Int32), tg.Cast(s, wSize, tf.Int32), negOne}))
 	return image
 }
 
@@ -444,12 +461,17 @@ func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding paddin
 	strides := []int64{1, stride.Y, stride.X, 1}
 	rates := []int64{1, rate.Y, rate.X, 1}
 	s := image.Path.SubScope("Dilatation2d")
+	// If the filter is a convolutional filter [height, widht, depth, batch]
+	// we convert it to a dilatation filter [height, widht, depth]
+	if filter.Shape().NumDimensions() == 4 && filter.Shape().Size(3) == 1 {
+		filter = op.Squeeze(s, filter, op.SqueezeSqueezeDims([]int64{3}))
+	}
 	filter = tg.Cast(s, filter, image.Dtype())
 	image.Output = op.Dilation2D(s, image.Output, filter, strides, rates, padding.String())
 	return image
 }
 
-// Erode ececutes the erosion operation between the current image and the padded filter
+// Erode executes the erosion operation between the current image and the padded filter
 // The strides parameter rules the stride along each dimension
 // The rate parameter rules the input stride for atrous morphological dilatation
 // Padding is a padding type to specify the type of padding

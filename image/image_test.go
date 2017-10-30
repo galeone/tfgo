@@ -78,6 +78,88 @@ func TestReadGIFWithRead(t *testing.T) {
 	}
 }
 
+func TestConvertDtype(t *testing.T) {
+	root := tg.NewRoot()
+	// default dtype is float with values in 0 1
+	img := image.ReadJPEG(root, jpegImagePath, 3)
+	unchange := img.Clone().ConvertDtype(tf.Float, false)
+	if img.Dtype() != unchange.Dtype() {
+		t.Errorf("Dtype shouldn't change but got: %v vs %v", img.Dtype(), unchange.Dtype())
+	}
+
+	// convert from float to double
+	double := img.Clone().ConvertDtype(tf.Double, false)
+	if double.Dtype() != tf.Double {
+		t.Errorf("Double type expected but got: %v", double.Dtype())
+	}
+
+	// Float to int, no saturate
+	intNoSat := img.Clone().ConvertDtype(tf.Int32, false)
+	if intNoSat.Dtype() != tf.Int32 {
+		t.Errorf("Expected int32, but got: %v", intNoSat.Dtype())
+	}
+
+	// Float to int, saturate
+	intSat := img.Clone().ConvertDtype(tf.Int32, true)
+	if intSat.Dtype() != tf.Int32 {
+		t.Errorf("Expected int32, but got: %v", intSat.Dtype())
+	}
+
+	// From int to bigger int, with saturate
+	longInt := intSat.Clone().ConvertDtype(tf.Int64, true)
+	if longInt.Dtype() != tf.Int64 {
+		t.Errorf("Expected int64, but got: %v", longInt.Dtype())
+	}
+
+	longIntNoSat := intSat.Clone().ConvertDtype(tf.Int64, false)
+	if longIntNoSat.Dtype() != tf.Int64 {
+		t.Errorf("Expected int64, but got: %v", longIntNoSat.Dtype())
+	}
+	// From int to smaller int
+	shortInt := intSat.Clone().ConvertDtype(tf.Int8, true)
+	if shortInt.Dtype() != tf.Int8 {
+		t.Errorf("Expected int8, but got: %v", shortInt.Dtype())
+	}
+
+	shortIntNoSat := intSat.Clone().ConvertDtype(tf.Int8, false)
+	if shortIntNoSat.Dtype() != tf.Int8 {
+		t.Errorf("Expected int8, but got: %v", shortIntNoSat.Dtype())
+	}
+
+	// From int to float, saturate or not is meaningless
+	floatFromInt := intSat.Clone().ConvertDtype(tf.Double, false)
+	if floatFromInt.Dtype() != tf.Double {
+		t.Errorf("Expected tf.double, got %v", floatFromInt.Dtype())
+	}
+}
+
+func TestChangeColorspace(t *testing.T) {
+	root := tg.NewRoot()
+	img := image.ReadJPEG(root, jpegImagePath, 3)
+	imgToHSV := img.Clone().RGBToHSV()
+	imgToRGB := imgToHSV.Clone().HSVToRGB()
+	// isClose retuns the comparison elementwhise among two values
+	// I want a single value -> put them all in and
+	closeness := op.All(root.SubScope("All"),
+		tg.IsClose(root,
+			img.Value(), imgToRGB.Value(), tg.Const(root, float32(1e-5)), tg.Const(root, float32(1e-7))),
+		tg.Const(root.SubScope("reduction_indices"), []int32{0, 1, 2}))
+	results := tg.Exec(root, []tf.Output{closeness}, nil, &tf.SessionOptions{})
+	if !results[0].Value().(bool) {
+		t.Error("RGB -> HSB -> RGB expect to have first RGB equal to second RGB, but they're different")
+	}
+}
+
+func TestPanicReadWithUnsupportedExtensaion(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Code did not panic, but it should")
+		}
+	}()
+	root := tg.NewRoot()
+	image.Read(root, "not_exists.jlel", 1)
+}
+
 func TestNewImage(t *testing.T) {
 	root := tg.NewRoot()
 	img := image.Read(root, pngImagePath, 3)
@@ -89,7 +171,18 @@ func TestNewImage(t *testing.T) {
 	if !reflect.DeepEqual(clone.Shape64(true), clone3d.Shape64(true)) {
 		t.Errorf("clone shape = %v must be equal to %v shape, but is not", clone.Shape64(true), clone3d.Shape64(true))
 	}
+}
 
+func TestPanicNewImage(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Code did not panic, but it should")
+		}
+	}()
+	// a new image is meanigless if its not a 3 or 4d tensor
+	root := tg.NewRoot()
+	tensor := tg.Const(root, []uint32{1})
+	image.NewImage(root, tensor)
 }
 
 func TestResizeArea(t *testing.T) {
@@ -219,6 +312,58 @@ func TestAdjustBrightness(t *testing.T) {
 	}
 }
 
+func TestAdjustContrast(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80})
+	imgContrast := img.Clone().AdjustContrast(0.5)
+	tg.Exec(root, []tf.Output{imgContrast.Value()}, nil, &tf.SessionOptions{})
+	// If no panic, tensorflow works and the change in contrast exists
+}
+
+func TestAdjustGamma(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80})
+	imgGamma := img.Clone().AdjustGamma(0.5, 0.7)
+	tg.Exec(root, []tf.Output{imgGamma.Value()}, nil, &tf.SessionOptions{})
+	// If no panic, tensorflow works and the change in contrast exists
+}
+
+func TestAdjustHue(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80})
+	imgHue := img.Clone().AdjustHue(0.5)
+	tg.Exec(root, []tf.Output{imgHue.Value()}, nil, &tf.SessionOptions{})
+	// If no panic, tensorflow works and the change in contrast exists
+}
+
+func TestAdjustSaturation(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 3).ResizeNearestNeighbor(image.Size{Height: 80, Width: 80})
+	imgSaturation := img.Clone().AdjustSaturation(0.5)
+	tg.Exec(root, []tf.Output{imgSaturation.Value()}, nil, &tf.SessionOptions{})
+	// If no panic, tensorflow works and the change in contrast exists
+}
+
 func TestEncodeJPEG(t *testing.T) {
 	root := tg.NewRoot()
 	img := image.Read(root, jpegImagePath, 3)
@@ -261,6 +406,11 @@ func TestCropAndResize(t *testing.T) {
 }
 
 func TestDrawBB(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
 	root := tg.NewRoot()
 	singleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{image.Box{
 		Start: image.Point{X: 0.2, Y: 0.2},
@@ -278,13 +428,48 @@ func TestDrawBB(t *testing.T) {
 
 func TestExtractGlimpses(t *testing.T) {
 	root := tg.NewRoot()
-	twoGlimpses := image.Read(root, pngImagePath, 3).ExtractGlimpse(image.Size{Height: 200, Width: 300},
+	glimpse := image.Read(root, pngImagePath, 3).ExtractGlimpse(image.Size{Height: 200, Width: 300},
 		image.Point{X: 0.2, Y: 0.2}, op.ExtractGlimpseNormalized(true), op.ExtractGlimpseCentered(false))
 	// normalized = true and centered = false -> coordinates in [0,1]
-	results := tg.Exec(root, []tf.Output{twoGlimpses}, nil, &tf.SessionOptions{})
+	results := tg.Exec(root, []tf.Output{glimpse}, nil, &tf.SessionOptions{})
 	glimpses := results[0]
 	if !reflect.DeepEqual(glimpses.Shape(), []int64{1, 200, 300, 3}) {
 		t.Errorf("Expected 1 glimpse 200x300x3, got: %v", glimpses.Shape())
 	}
+}
 
+func TestCentralCrop(t *testing.T) {
+	root := tg.NewRoot()
+	centralCrop := image.Read(root, pngImagePath, 3).CentralCrop(0.5).Value()
+	results := tg.Exec(root, []tf.Output{centralCrop}, nil, &tf.SessionOptions{})
+	if !reflect.DeepEqual(results[0].Shape(), []int64{90, 90, 3}) {
+		t.Errorf("Expected a central crop of 50%% (180x180) -> 90x90, but got: %v", results[0].Shape())
+	}
+}
+
+func TestDilateErode(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	// image 1D, ok filter 1d
+	img := image.Read(root, pngImagePath, 1)
+	dilate := img.Clone().Dilate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, image.Stride{X: 2, Y: 2}, padding.SAME).Value()
+	erode := img.Clone().Erode(filter.SobelX(root), image.Stride{X: 1, Y: 1}, image.Stride{X: 2, Y: 2}, padding.SAME).Value()
+	tg.Exec(root, []tf.Output{dilate, erode}, nil, &tf.SessionOptions{})
+}
+
+func TestPanicMorph(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Code did not panic, but it should")
+		}
+	}()
+	root := tg.NewRoot()
+	// image 3D, filter 1d -> panic
+	img := image.Read(root, pngImagePath, 3)
+	dilate := img.Clone().Dilate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, image.Stride{X: 2, Y: 2}, padding.SAME).Value()
+	tg.Exec(root, []tf.Output{dilate}, nil, &tf.SessionOptions{})
 }
