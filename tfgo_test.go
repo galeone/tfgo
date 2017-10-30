@@ -185,16 +185,23 @@ func TestPanicModelRestore(t *testing.T) {
 	tg.LoadModel("test_models/export", []string{"tagwat"}, nil)
 }
 
-func TestPanicModel(t *testing.T) {
+func TestPanicModelWhenOpNotExists(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Errorf("The code did not panic")
 		}
 	}()
 	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
-
-	// Should panic
 	model.Op("does not exists", 0)
+}
+
+func TestPanicModelWhenOpOutputNotExists(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
 	// Esists but wroing output number (1 instead of 0)
 	model.Op("LeNetDropout/softmax_linear/Identity", 1)
 }
@@ -212,6 +219,22 @@ func TestLoadModel(t *testing.T) {
 	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 10 {
 		t.Errorf("Expected output shape of [1,10], got %v", results[0].Shape())
 	}
+}
+
+func TestPanicModelExec(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+	// fake input with meaningless type should make the model crash
+	fakeInput, _ := tf.NewTensor([1][28][28][1]string{})
+	model.Exec([]tf.Output{
+		model.Op("LeNetDropout/softmax_linear/Identity", 0),
+	}, map[tf.Output]*tf.Tensor{
+		model.Op("input_", 0): fakeInput,
+	})
 }
 
 func TestIsIntegerFloat(t *testing.T) {
@@ -237,7 +260,7 @@ func TestIsIntegerFloat(t *testing.T) {
 
 func TestMaxMinValue(t *testing.T) {
 	defer func() {
-		// Panic on min/max on unsupported dtype
+		// Panic on min on unsupported dtype
 		if r := recover(); r == nil {
 			t.Errorf("The code did not panic")
 		}
@@ -331,9 +354,19 @@ func TestMaxMinValue(t *testing.T) {
 		t.Errorf("expected MinValue of dype float32 to be equal to 6.1*10^{-5} but got %v", tg.MinValue(B.DataType()))
 	}
 
-	// cause 2 panics
+	// cause panic
 	s := tg.Const(root, "test")
 	tg.MinValue(s.DataType())
-	tg.MaxValue(s.DataType())
+}
 
+func TestMaxValuePanic(t *testing.T) {
+	defer func() {
+		// Panic on max on unsupported dtype
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	root := tg.NewRoot()
+	s := tg.Const(root, "test")
+	tg.MaxValue(s.DataType())
 }
