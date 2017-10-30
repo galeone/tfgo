@@ -138,7 +138,7 @@ func TestChangeColorspace(t *testing.T) {
 	img := image.ReadJPEG(root, jpegImagePath, 3)
 	imgToHSV := img.Clone().RGBToHSV()
 	imgToRGB := imgToHSV.Clone().HSVToRGB()
-	// isClose retuns the comparison elementwhise among two values
+	// isClose returns the comparison elementwhise among two values
 	// I want a single value -> put them all in and
 	closeness := op.All(root.SubScope("All"),
 		tg.IsClose(root,
@@ -282,7 +282,7 @@ func TestConvolveCorrelate(t *testing.T) {
 	// correlation
 	Gx = grayImg.Clone().Correlate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, padding.VALID)
 	Gy = grayImg.Clone().Correlate(filter.SobelY(root), image.Stride{X: 1, Y: 1}, padding.VALID)
-	correlateEdges := image.NewImage(root.SubScope("edge"), Gx.Square().Add(Gy.Square().Value()).Sqrt().Value()).Value()
+	correlateEdges := image.NewImage(root.SubScope("edge"), Gx.Pow(tg.Const(root, int32(2))).Add(Gy.Square().Value()).Sqrt().Value()).Value()
 
 	results := tg.Exec(root, []tf.Output{convoluteEdges, correlateEdges}, nil, &tf.SessionOptions{})
 	if !reflect.DeepEqual(results[0].Shape(), []int64{180, 180, 1}) {
@@ -394,9 +394,8 @@ func TestRGB2Grayscale(t *testing.T) {
 
 func TestCropAndResize(t *testing.T) {
 	root := tg.NewRoot()
-	crop := image.Read(root, pngImagePath, 3).CropAndResize(image.Box{
-		Start: image.Point{X: 0.2, Y: 0.2},
-		End:   image.Point{X: 0.5, Y: 0.8}},
+	crop := image.Read(root, pngImagePath, 3).CropAndResize(image.Box{Start: image.Point{X: 0.2, Y: 0.2},
+		End: image.Point{X: 0.5, Y: 0.8}},
 		image.Size{Height: 200, Width: 200})
 
 	results := tg.Exec(root, []tf.Output{crop.Value()}, nil, &tf.SessionOptions{})
@@ -412,13 +411,13 @@ func TestDrawBB(t *testing.T) {
 		}
 	}()
 	root := tg.NewRoot()
-	singleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{image.Box{
+	singleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{{
 		Start: image.Point{X: 0.2, Y: 0.2},
 		End:   image.Point{X: 0.5, Y: 0.8}}})
 
-	doubleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{image.Box{
+	doubleBox := image.Read(root, pngImagePath, 3).DrawBoundingBoxes([]image.Box{{
 		Start: image.Point{X: 0.2, Y: 0.2},
-		End:   image.Point{X: 0.5, Y: 0.8}}, image.Box{
+		End:   image.Point{X: 0.5, Y: 0.8}}, {
 		Start: image.Point{X: 0.05, Y: 0.27},
 		End:   image.Point{X: 0.7, Y: 0.9}}})
 
@@ -472,4 +471,17 @@ func TestPanicMorph(t *testing.T) {
 	img := image.Read(root, pngImagePath, 3)
 	dilate := img.Clone().Dilate(filter.SobelX(root), image.Stride{X: 1, Y: 1}, image.Stride{X: 2, Y: 2}, padding.SAME).Value()
 	tg.Exec(root, []tf.Output{dilate}, nil, &tf.SessionOptions{})
+}
+
+func TestCenterNormalized(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Code panic, but it shouldn't: %v", r)
+		}
+	}()
+	root := tg.NewRoot()
+	img := image.Read(root, pngImagePath, 1)
+	normalized := img.Clone().Normalize().Value()
+	centered := img.Clone().Center().Value()
+	tg.Exec(root, []tf.Output{normalized, centered}, nil, &tf.SessionOptions{})
 }

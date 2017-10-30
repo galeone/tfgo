@@ -147,12 +147,14 @@ func (image *Image) Normalize() *Image {
 
 	s = image.Path.SubScope("normalize")
 	// Avoid division by zero
-	var numPixels int32
-	dims32 := image.Shape32(false)
-	for _, dim := range dims32 {
-		numPixels *= dim
-	}
-	minStddev := op.Rsqrt(s.SubScope("Rsqrt"), op.Const(s.SubScope("numPix"), float32(numPixels)))
+	shape := op.Shape(s.SubScope("shape"), image.Output)
+	gatherScope := s.SubScope("gatherHeight")
+	height := op.Squeeze(s.SubScope("squeeze"), tg.Cast(s, op.Gather(gatherScope, shape, tg.Const(gatherScope.SubScope("indices"), []int32{1})), tf.Float))
+	gatherScope = s.SubScope("gatherWidth")
+	width := op.Squeeze(s.SubScope("squeeze"), tg.Cast(s, op.Gather(gatherScope, shape, tg.Const(gatherScope.SubScope("indices"), []int32{2})), tf.Float))
+	numPixels := op.Mul(s.SubScope("numPix"), width, height)
+
+	minStddev := op.Rsqrt(s.SubScope("Rsqrt"), numPixels)
 	pixelValueScale := op.Maximum(s.SubScope("pixveValueScale"), stddev, minStddev)
 	image.Output = op.Div(s.SubScope("Div"), op.Sub(s.SubScope("Sub"), image.Output, mean), pixelValueScale)
 
