@@ -102,7 +102,7 @@ func NewImage(scope *op.Scope, tensor tf.Output) *Image {
 func (image *Image) Value() tf.Output {
 	defer image.Tensor.Check()
 	if image.Output.Shape().Size(0) == 1 {
-		return op.Squeeze(image.Path.SubScope("Squeeze"), image.Output, op.SqueezeSqueezeDims([]int64{0}))
+		return op.Squeeze(image.Path.SubScope("Squeeze"), image.Output, op.SqueezeAxis([]int64{0}))
 	}
 	return image.Output
 }
@@ -466,7 +466,7 @@ func (image *Image) Dilate(filter tf.Output, stride, rate Stride, padding paddin
 	// If the filter is a convolutional filter [height, widht, depth, batch]
 	// we convert it to a dilatation filter [height, widht, depth]
 	if filter.Shape().NumDimensions() == 4 && filter.Shape().Size(3) == 1 {
-		filter = op.Squeeze(s, filter, op.SqueezeSqueezeDims([]int64{3}))
+		filter = op.Squeeze(s, filter, op.SqueezeAxis([]int64{3}))
 	}
 	filter = tg.Cast(s, filter, image.Dtype())
 	image.Output = op.Dilation2D(s, image.Output, filter, strides, rates, padding.String())

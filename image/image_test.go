@@ -167,7 +167,7 @@ func TestNewImage(t *testing.T) {
 	// img is a 4-D tensor under the hood
 	clone := image.NewImage(root, img.Output)
 	// Extract 4d tensor, remove batch size, use NewImage -> adds first dim -> 4d
-	clone3d := image.NewImage(root, op.Squeeze(root.SubScope("Squeeze"), clone.Output, op.SqueezeSqueezeDims([]int64{0})))
+	clone3d := image.NewImage(root, op.Squeeze(root.SubScope("Squeeze"), clone.Output, op.SqueezeAxis([]int64{0})))
 	if !reflect.DeepEqual(clone.Shape64(true), clone3d.Shape64(true)) {
 		t.Errorf("clone shape = %v must be equal to %v shape, but is not", clone.Shape64(true), clone3d.Shape64(true))
 	}
