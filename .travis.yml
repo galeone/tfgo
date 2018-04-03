@@ -16,7 +16,6 @@ before_install:
   - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.3.0.tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
   - go get github.com/tensorflow/tensorflow/tensorflow/go
-  - go test github.com/tensorflow/tensorflow/tensorflow/go
   - pushd test_models
   - sudo python3 create.py
   - popd
