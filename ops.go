@@ -11,6 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package tfgo simplifies the usage of the Tensorflow's go bindings
+// wrapping the most common methods as methods of new and logically separated
+// objects. These objects handle the naming issues (that could happen when
+// describing a tf.Graph) in a transparent way. Also, additional features are added.
+// Why this package is required is explained in this blog post:
+// https://pgaleone.eu/tensorflow/go/2017/05/29/understanding-tensorflow-using-go/
 package tfgo
 
 import (
