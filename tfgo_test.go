@@ -258,25 +258,10 @@ func TestIsIntegerFloat(t *testing.T) {
 	}
 }
 
-func TestMaxMinValue(t *testing.T) {
-	defer func() {
-		// Panic on min on unsupported dtype
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-
+func TestMinValue(t *testing.T) {
 	root := tg.NewRoot()
 	A := tg.Const(root, int64(0))
 	B := tg.Const(root, float64(0))
-
-	if tg.MaxValue(A.DataType()) != math.MaxInt64 {
-		t.Errorf("expected MaxValue of dype int64 to be equal to math.MaxInt64, but got %v", tg.MaxValue(A.DataType()))
-	}
-
-	if tg.MaxValue(B.DataType()) != math.MaxFloat64 {
-		t.Errorf("expected MaxValue of dype float64 to be equal to math.MaxFloat64 but got %v", tg.MaxValue(B.DataType()))
-	}
 
 	if tg.MinValue(A.DataType()) != math.MinInt64 {
 		t.Errorf("expected MinValue of dype int64 to be equal to math.MinInt64, but got %v", tg.MinValue(A.DataType()))
@@ -288,19 +273,11 @@ func TestMaxMinValue(t *testing.T) {
 
 	A = tg.Cast(root, A, tf.Int32)
 
-	if tg.MaxValue(A.DataType()) != math.MaxInt32 {
-		t.Errorf("expected MaxValue of dype int32 to be equal to math.MaxInt32, but got %v", tg.MaxValue(A.DataType()))
-	}
-
 	if tg.MinValue(A.DataType()) != math.MinInt32 {
 		t.Errorf("expected MinValue of dype int32 to be equal to math.MinInt32, but got %v", tg.MinValue(A.DataType()))
 	}
 
 	A = tg.Cast(root, A, tf.Int16)
-
-	if tg.MaxValue(A.DataType()) != math.MaxInt16 {
-		t.Errorf("expected MaxValue of dype int16 to be equal to math.MaxInt16, but got %v", tg.MaxValue(A.DataType()))
-	}
 
 	if tg.MinValue(A.DataType()) != math.MinInt16 {
 		t.Errorf("expected MinValue of dype int16 to be equal to math.MinInt16, but got %v", tg.MinValue(A.DataType()))
@@ -308,19 +285,11 @@ func TestMaxMinValue(t *testing.T) {
 
 	A = tg.Cast(root, A, tf.Int8)
 
-	if tg.MaxValue(A.DataType()) != math.MaxInt8 {
-		t.Errorf("expected MaxValue of dype int8 to be equal to math.MaxInt8, but got %v", tg.MaxValue(A.DataType()))
-	}
-
 	if tg.MinValue(A.DataType()) != math.MinInt8 {
 		t.Errorf("expected MinValue of dype int8 to be equal to math.MinInt8, but got %v", tg.MinValue(A.DataType()))
 	}
 
 	A = tg.Cast(root, A, tf.Uint8)
-
-	if tg.MaxValue(A.DataType()) != math.MaxUint8 {
-		t.Errorf("expected MaxValue of dype uint8 to be equal to math.MaxUint8, but got %v", tg.MaxValue(A.DataType()))
-	}
 
 	if tg.MinValue(A.DataType()) != 0 {
 		t.Errorf("expected MinValue of dype uint8 to be equal to 0, but got %v", tg.MinValue(A.DataType()))
@@ -328,35 +297,21 @@ func TestMaxMinValue(t *testing.T) {
 
 	A = tg.Cast(root, A, tf.Uint16)
 
-	if tg.MaxValue(A.DataType()) != math.MaxUint16 {
-		t.Errorf("expected MaxValue of dype uint16 to be equal to math.MaxUint16, but got %v", tg.MaxValue(A.DataType()))
-	}
-
 	if tg.MinValue(A.DataType()) != 0 {
 		t.Errorf("expected MinValue of dype uint16 to be equal to 0, but got %v", tg.MinValue(A.DataType()))
 	}
 
 	B = tg.Cast(root, B, tf.Float)
-	if tg.MaxValue(B.DataType()) != math.MaxFloat32 {
-		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32 but got %v", tg.MaxValue(B.DataType()))
-	}
 
 	if tg.MinValue(B.DataType()) != math.SmallestNonzeroFloat32 {
 		t.Errorf("expected MinValue of dype float32 to be equal to math.SmallestNonzeroFloat32 but got %v", tg.MinValue(B.DataType()))
 	}
 
 	B = tg.Cast(root, B, tf.Half)
-	if tg.MaxValue(B.DataType()) != math.MaxFloat32/math.Pow(2, 16) {
-		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32  / math.Pow(2, 16) but got %v", tg.MaxValue(B.DataType()))
-	}
 
 	if tg.MinValue(B.DataType()) != 6.10*math.Pow10(-5) {
 		t.Errorf("expected MinValue of dype float32 to be equal to 6.1*10^{-5} but got %v", tg.MinValue(B.DataType()))
 	}
-
-	// cause panic
-	s := tg.Const(root, "test")
-	tg.MinValue(s.DataType())
 }
 
 func TestMaxValuePanic(t *testing.T) {
@@ -369,4 +324,70 @@ func TestMaxValuePanic(t *testing.T) {
 	root := tg.NewRoot()
 	s := tg.Const(root, "test")
 	tg.MaxValue(s.DataType())
+}
+
+func TestMinValuePanic(t *testing.T) {
+	defer func() {
+		// Panic on max on unsupported dtype
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	root := tg.NewRoot()
+	s := tg.Const(root, "test")
+	tg.MinValue(s.DataType())
+}
+
+func TestMaxValue(t *testing.T) {
+	root := tg.NewRoot()
+	A := tg.Const(root, int64(0))
+	B := tg.Const(root, float64(0))
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt64 {
+		t.Errorf("expected MaxValue of dype int64 to be equal to math.MaxInt64, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	if tg.MaxValue(B.DataType()) != math.MaxFloat64 {
+		t.Errorf("expected MaxValue of dype float64 to be equal to math.MaxFloat64 but got %v", tg.MaxValue(B.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Int32)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt32 {
+		t.Errorf("expected MaxValue of dype int32 to be equal to math.MaxInt32, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Int16)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt16 {
+		t.Errorf("expected MaxValue of dype int16 to be equal to math.MaxInt16, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Int8)
+
+	if tg.MaxValue(A.DataType()) != math.MaxInt8 {
+		t.Errorf("expected MaxValue of dype int8 to be equal to math.MaxInt8, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Uint8)
+
+	if tg.MaxValue(A.DataType()) != math.MaxUint8 {
+		t.Errorf("expected MaxValue of dype uint8 to be equal to math.MaxUint8, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	A = tg.Cast(root, A, tf.Uint16)
+
+	if tg.MaxValue(A.DataType()) != math.MaxUint16 {
+		t.Errorf("expected MaxValue of dype uint16 to be equal to math.MaxUint16, but got %v", tg.MaxValue(A.DataType()))
+	}
+
+	B = tg.Cast(root, B, tf.Float)
+	if tg.MaxValue(B.DataType()) != math.MaxFloat32 {
+		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32 but got %v", tg.MaxValue(B.DataType()))
+	}
+
+	B = tg.Cast(root, B, tf.Half)
+	if tg.MaxValue(B.DataType()) != math.MaxFloat32/math.Pow(2, 16) {
+		t.Errorf("expected MaxValue of dype float32 to be equal to math.MaxFloat32  / math.Pow(2, 16) but got %v", tg.MaxValue(B.DataType()))
+	}
 }
