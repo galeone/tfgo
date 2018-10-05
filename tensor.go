@@ -90,7 +90,7 @@ func (tensor *Tensor) Dtype() tf.DataType {
 // --------
 
 // Clone returns a copy of the current tensor in a new scope
-// Clone must be used when one want to create a different tensor
+// Clone is used to create a different tensor
 // from the output of an operation.
 // The new node is placed at the same level of the current tensor
 // it can be seen as a twin tensor

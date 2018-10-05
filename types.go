@@ -65,7 +65,7 @@ func MaxValue(dtype tf.DataType) float64 {
 	panic(fmt.Sprintf("dtype %d not supported", dtype))
 }
 
-// MinValue returns the minimin representable value for the specified dtype
+// MinValue returns the minimum representable value for the specified dtype
 func MinValue(dtype tf.DataType) float64 {
 	switch dtype {
 	case tf.Double:
