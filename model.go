@@ -16,7 +16,6 @@ package tfgo
 import (
 	"fmt"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
-	//"runtime"
 )
 
 // Model represents a trained model
@@ -25,8 +24,8 @@ type Model struct {
 }
 
 // LoadModel creates a new *Model, loading it from the exportDir.
-// The graph loaded is identified by the set of tag specified when exporting it.
-// This operation creates a session too whose options are `options`
+// The graph loaded is identified by the set of tags specified when exporting it.
+// This operation creates a session with specified `options`
 // Panics if the model can't be loaded
 func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (model *Model) {
 	var err error
@@ -35,15 +34,11 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 	if err != nil {
 		panic(err.Error())
 	}
-
-	// Close the session created for the current model when the model itself is no more referenced
-	//runtime.SetFinalizer(model.saved.Session, (*tf.Session).Close)
-	// It looks like a finalizer is already set on the Session object. Commenting the previous line
 	return
 }
 
-// Exec executes the nodes tensors that must be present in the loaded model
-// feedDict allow to feed values to placeholder (that must have been saved in the model definition too)
+// Exec executes the nodes/tensors that must be present in the loaded model
+// feedDict values to feed to placeholders (that must have been saved in the model definition)
 // panics on error
 func (model *Model) Exec(tensors []tf.Output, feedDict map[tf.Output]*tf.Tensor) (results []*tf.Tensor) {
 	var err error
@@ -53,8 +48,7 @@ func (model *Model) Exec(tensors []tf.Output, feedDict map[tf.Output]*tf.Tensor)
 	panic(err)
 }
 
-// Op extracts from the model graph the tensor with the spacified name
-// Fetch from the output list of that operation the tensor in position idx
+// Op extracts the output in position idx of the tensor with the specified name from the model graph
 func (model *Model) Op(name string, idx int) tf.Output {
 	op := model.saved.Graph.Operation(name)
 	if op == nil {
