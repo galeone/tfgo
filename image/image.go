@@ -57,7 +57,7 @@ func ReadGIF(scope *op.Scope, imagePath string) *Image {
 	return image.Scale(0, 1)
 }
 
-// Read search for the `imagePath` extensions and uses the Read<format> function
+// Read searches for the `imagePath` extensions and uses the Read<format> function
 // to decode and load the right image. Panics if the format is unknown.
 func Read(scope *op.Scope, imagePath string, channels int64) *Image {
 	split := strings.Split(imagePath, ".")
@@ -161,8 +161,8 @@ func (image *Image) Normalize() *Image {
 	return image
 }
 
-// Center computes the mean value of the pixel values and subtract this value
-// to every pixel: this operation centers the data
+// Center computes the mean value of the pixel values and subtracts this value
+// from every pixel: this operation centers the data
 func (image *Image) Center() *Image {
 	defer image.Tensor.Check()
 	if image.Dtype() != tf.Float {
@@ -327,7 +327,7 @@ func (image *Image) CentralCrop(centralFraction float32) *Image {
 	return image
 }
 
-// CropAndResize crops the image to the specified box and resize the result to size
+// CropAndResize crops the image to the specified box and resizes the result to size
 func (image *Image) CropAndResize(box Box, size Size, optional ...op.CropAndResizeAttr) *Image {
 	defer image.Tensor.Check()
 	s := image.Path.SubScope("cropAndResize")

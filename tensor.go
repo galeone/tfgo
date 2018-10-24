@@ -21,7 +21,7 @@ import (
 // Tensor is an high level abstraction for the
 // tf.Output structure, associating a scope to the Tensor
 type Tensor struct {
-	// Root: Each tensor mantains a pointer to the graph root
+	// Root: Each tensor maintains a pointer to the graph root
 	Root *op.Scope
 	// Path is the current Tensor full path
 	Path *op.Scope
@@ -57,7 +57,7 @@ func (tensor *Tensor) Scope() *op.Scope {
 
 // Shape64 returns the shape of the tensor as []int64.
 // If firstDimension is true a 4 elements slice is returned.
-// Otherwise a 3 elements sice is returned.
+// Otherwise a 3 elements slice is returned.
 func (tensor *Tensor) Shape64(firstDimension bool) []int64 {
 	dims64, _ := tensor.Output.Shape().ToSlice()
 	if firstDimension {
@@ -68,7 +68,7 @@ func (tensor *Tensor) Shape64(firstDimension bool) []int64 {
 
 // Shape32 returns the shape of the tensor as []int32.
 // If firstDimension is true a 4 elements slice is returned.
-// Otherwise a 3 elements sice is returned.
+// Otherwise a 3 elements slice is returned.
 func (tensor *Tensor) Shape32(firstDimension bool) []int32 {
 	dims64 := tensor.Shape64(firstDimension)
 	var dims32 = make([]int32, len(dims64))
