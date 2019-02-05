@@ -52,11 +52,11 @@ func (model *Model) Exec(tensors []tf.Output, feedDict map[tf.Output]*tf.Tensor)
 func (model *Model) Op(name string, idx int) tf.Output {
 	op := model.saved.Graph.Operation(name)
 	if op == nil {
-		panic(fmt.Errorf("Op %s not found", name))
+		panic(fmt.Errorf("op %s not found", name))
 	}
 	nout := op.NumOutputs()
 	if nout <= idx {
-		panic(fmt.Errorf("Op %s has %d outputs. Requested output number %d", name, nout, idx))
+		panic(fmt.Errorf("op %s has %d outputs. Requested output number %d", name, nout, idx))
 	}
 	return op.Output(idx)
 }
