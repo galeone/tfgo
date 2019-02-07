@@ -70,7 +70,7 @@ func Read(scope *op.Scope, imagePath string, channels int64) *Image {
 	case "gif":
 		return ReadGIF(scope, imagePath)
 	default:
-		panic(fmt.Errorf("Unsupported image extension %s", ext))
+		panic(fmt.Errorf("unsupported image extension %s", ext))
 	}
 }
 
