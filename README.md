@@ -126,7 +126,7 @@ the list of the available methods is available on GoDoc: http://godoc.org/github
 
 # Train in Python, Serve in Go
 
-Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of pyhton and Go code. Below you can find the Python and the Go code.
+Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of Python and Go code. Below you can find the Python and the Go code.
 Just dig into the example to understand how to serve a trained model with `tfgo`.
 
 **Python code**:
