@@ -164,7 +164,8 @@ def main():
         # Create a builder to export the model
         builder = tf.saved_model.builder.SavedModelBuilder("export")
         # Tag the model in order to be capable of restoring it specifying the tag set
-        builder.add_meta_graph_and_variables(sess, ["tag"])
+        # clear_device=True in order to export a device agnostic graph.
+        builder.add_meta_graph_and_variables(sess, ["tag"], clear_devices=True)
         builder.save()
 
     return 0
