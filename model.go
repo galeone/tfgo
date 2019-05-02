@@ -15,6 +15,8 @@ package tfgo
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
@@ -34,6 +36,38 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 	if err != nil {
 		panic(err.Error())
 	}
+	return
+}
+
+// ImportModel creates a new *Model, loading the graph from the serialized representation.
+// This operation creates a session with specified `options`
+// Panics if the model can't be loaded
+func ImportModel(serializedModel string, options *tf.SessionOptions) (model *Model) {
+	var err error
+	model = new(Model)
+
+	defer func() {
+		if err != nil {
+			panic(err.Error())
+		}
+	}()
+
+	contents, err := ioutil.ReadFile(serializedModel)
+	if err != nil {
+		return
+	}
+
+	graph := tf.NewGraph()
+	if err := graph.Import(contents, ""); err != nil {
+		return
+	}
+
+	session, err := tf.NewSession(graph, options)
+	if err != nil {
+		return
+	}
+
+	model.saved = &tf.SavedModel{Session: session, Graph: graph}
 	return
 }
 
