@@ -42,6 +42,9 @@ def main():
         builder.add_meta_graph_and_variables(sess, ["tag"])
         builder.save()
 
+        # Write the serialized form of the graph
+        tf.train.write_graph(sess.graph, 'export', 'serialized_model.pb')
+
     return 0
 
 
