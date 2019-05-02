@@ -42,7 +42,7 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 // ImportModel creates a new *Model, loading the graph from the serialized representation.
 // This operation creates a session with specified `options`
 // Panics if the model can't be loaded
-func ImportModel(serializedModel string, options *tf.SessionOptions) (model *Model) {
+func ImportModel(serializedModel, prefix string, options *tf.SessionOptions) (model *Model) {
 	var err error
 	model = new(Model)
 
@@ -58,7 +58,7 @@ func ImportModel(serializedModel string, options *tf.SessionOptions) (model *Mod
 	}
 
 	graph := tf.NewGraph()
-	if err := graph.Import(contents, ""); err != nil {
+	if err := graph.Import(contents, prefix); err != nil {
 		return
 	}
 
