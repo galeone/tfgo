@@ -11,7 +11,7 @@ before_install:
   - sudo python3 get-pip.py
   - popd
   - sudo pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.12.0-cp36-cp36m-linux_x86_64.whl
-  - sudo pip3 install dytb
+  - sudo pip3 install dytb protobuf
   - go get github.com/mattn/goveralls
   - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.12.0.tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
