@@ -35,15 +35,19 @@ def main():
         # The best checkpoint path contains just one checkpoint, thus the last is the best
         saver = tf.train.Saver()
         saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
-
+       
         # Create a builder to export the model
         builder = tf.saved_model.builder.SavedModelBuilder("export")
         # Tag the model in order to be capable of restoring it specifying the tag set
         builder.add_meta_graph_and_variables(sess, ["tag"])
         builder.save()
 
+        # save the checkpoint files. Those are needed to freeze the graph.
+        tf.gfile.MakeDirs("models")
+        saver.save(sess, 'models/model')
+
         # Write the serialized form of the graph
-        tf.train.write_graph(sess.graph, 'export', 'serialized_model.pb')
+        tf.train.write_graph(sess.graph, 'models', 'model.pb')
 
     return 0
 

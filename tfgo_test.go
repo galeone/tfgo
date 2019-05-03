@@ -222,8 +222,7 @@ func TestLoadModel(t *testing.T) {
 }
 
 func TestImportModel(t *testing.T) {
-	model := tg.ImportModel("test_models/export/serialized_model.pb", "", nil)
-
+	model := tg.ImportModel("test_models/export/optimized_model.pb", "", nil)
 	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
 	results := model.Exec([]tf.Output{
 		model.Op("LeNetDropout/softmax_linear/Identity", 0),

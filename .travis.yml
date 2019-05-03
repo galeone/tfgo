@@ -18,6 +18,7 @@ before_install:
   - go get github.com/tensorflow/tensorflow/tensorflow/go
   - pushd test_models
   - sudo python3 create.py
+  - bash freeze_graph.sh
   - popd
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
