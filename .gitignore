@@ -16,3 +16,7 @@
 # Trained models
 test_models/log/*
 test_models/export/*
+test_models/models/*
+
+# Coverage HTML
+cover.html

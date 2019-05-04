@@ -221,6 +221,40 @@ func TestLoadModel(t *testing.T) {
 	}
 }
 
+func TestImportModel(t *testing.T) {
+	model := tg.ImportModel("test_models/export/optimized_model.pb", "", nil)
+	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
+	results := model.Exec([]tf.Output{
+		model.Op("LeNetDropout/softmax_linear/Identity", 0),
+	}, map[tf.Output]*tf.Tensor{
+		model.Op("input_", 0): fakeInput,
+	})
+
+	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 10 {
+		t.Errorf("Expected output shape of [1,10], got %v", results[0].Shape())
+	}
+}
+
+func TestPanicImportMOdel(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	// Panics because the model is not correct
+	tg.ImportModel("test_models/export/saved_model.pb", "", nil)
+}
+
+func TestPanicImportModelReadFile(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	// Panics because the model file does not exists
+	tg.ImportModel("test_models/export/fake", "", nil)
+}
+
 func TestPanicModelExec(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
