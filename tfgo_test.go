@@ -235,6 +235,26 @@ func TestImportModel(t *testing.T) {
 	}
 }
 
+func TestPanicImportMOdel(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	// Panics because the model is not correct
+	tg.ImportModel("test_models/export/saved_model.pb", "", nil)
+}
+
+func TestPanicImportModelReadFile(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	// Panics because the model file does not exists
+	tg.ImportModel("test_models/export/fake", "", nil)
+}
+
 func TestPanicModelExec(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
