@@ -1,6 +1,12 @@
 language: go
 dist: trusty
 sudo: true
+env:
+    global:
+        - TF_VERSION_MAJOR=1
+        - TF_VERSION_MINOR=13
+        - TF_VERSION_PATCH=1
+
 before_install:
   - sudo add-apt-repository -y ppa:deadsnakes/ppa
   - sudo apt-get update -qq
@@ -10,12 +16,16 @@ before_install:
   - wget https://bootstrap.pypa.io/get-pip.py
   - sudo python3 get-pip.py
   - popd
-  - sudo pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.12.0-cp36-cp36m-linux_x86_64.whl
+  - sudo pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"-cp36-cp36m-linux_x86_64.whl
   - sudo pip3 install dytb protobuf
   - go get github.com/mattn/goveralls
-  - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-1.12.0.tar.gz" | sudo tar -C /usr/local -xz
+  - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
-  - go get github.com/tensorflow/tensorflow/tensorflow/go
+  - git clone https://github.com/tensorflow/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
+  - pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
+  - git checkout r"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"
+  - go build
+  - popd
   - pushd test_models
   - sudo python3 create.py
   - sudo bash freeze_graph.sh
