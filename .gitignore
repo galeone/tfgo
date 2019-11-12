@@ -20,3 +20,6 @@ test_models/models/*
 
 # Coverage HTML
 cover.html
+
+# Editor configuration information
+.idea/
