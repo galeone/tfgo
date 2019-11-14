@@ -26,7 +26,7 @@ func Float32ToFeature(value []float32) (exampleFeature *example.Feature) {
 	return
 }
 
-func Int32ToFeature(value []int64) (exampleFeature *example.Feature) {
+func Int64ToFeature(value []int64) (exampleFeature *example.Feature) {
 	intList := example.Int64List{Value: value}
 	featureFloatList := example.Feature_Int64List{Int64List: &intList}
 	exampleFeature = &example.Feature{Kind: &featureFloatList}
