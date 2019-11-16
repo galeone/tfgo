@@ -30,5 +30,8 @@ before_install:
   - sudo python3 create.py
   - sudo bash freeze_graph.sh
   - popd
+  - pushd proto
+  - go generate
+  - popd
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
