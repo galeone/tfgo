@@ -23,3 +23,6 @@ cover.html
 
 # Editor configuration information
 .idea/
+
+# Generated go files from protobuf
+*.pb.go
