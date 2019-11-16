@@ -15,9 +15,8 @@ package tfgo
 
 import (
 	"fmt"
-	"io/ioutil"
-
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
+	"io/ioutil"
 )
 
 // Model represents a trained model
@@ -85,4 +84,14 @@ func (model *Model) Op(name string, idx int) tf.Output {
 		panic(fmt.Errorf("op %s has %d outputs. Requested output number %d", name, nout, idx))
 	}
 	return op.Output(idx)
+}
+
+func (model *Model) ExecEstimator(tensors []tf.Output, data map[string][]float32, preproc_fn func(map[string][]float32) ([]byte, error)) (results []*tf.Tensor) {
+	sequence, err := preproc_fn(data)
+	if err != nil {
+		panic(err)
+	}
+	input_tensor, _ := tf.NewTensor([]string{string(sequence)})
+	return model.Exec(tensors, map[tf.Output]*tf.Tensor{
+		model.Op("input_example_tensor", 0): input_tensor})
 }
