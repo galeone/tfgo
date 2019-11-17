@@ -63,7 +63,7 @@ Z == A false
 
 The list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo
 
-# Computer Vision using data flow graph
+## Computer Vision using data flow graph
 
 Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allows using the Go bindings to perform computer vision tasks in an elegant way.
 
@@ -124,12 +124,12 @@ func main() {
 
 the list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo/image
 
-# Train in Python, Serve in Go
+## Train in Python, Serve in Go
 
 Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of Python and Go code. Below you can find the Python and the Go code.
 Just dig into the example to understand how to serve a trained model with `tfgo`.
 
-**Python code**:
+### Python code
 
 ```python
 import sys
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-**Go code**:
+### Go code
 
 ```go
 package main
@@ -198,6 +198,60 @@ func main() {
 
         predictions := results[0].Value().([][]float32)
         fmt.Println(predictions)
+}
+```
+
+## Train with tf.estimator, serve in go
+
+`tfgo` supports two different inputs for the estimator:
+
+- Pandas DataFrames
+- Numpy Arrays
+- Python Dictionary
+
+You can train you estimator using these three types of feature columns and you'll be able to run the inference using the `*model.EstimatorServe` method.
+
+### Training in Python using estimator and feature columns
+
+An example of supported input is shown in the **example**: [estimator.py](test_models/estimator.py).
+
+### Estimator serving using Go
+
+```go
+package main
+
+import (
+    "fmt"
+    tg "github.com/galeone/tfgo"
+    tf "github.com/tensorflow/tensorflow/tensorflow/go"
+)
+
+func main() {
+    model := tg.LoadModel("test_models/output/1pb/", []string{"serve"}, nil)
+
+    // npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
+    npData := make(map[string][]float32)
+    npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
+
+    results := model.EstimatorServe([]tf.Output{
+        model.Op("dnn/head/predictions/probabilities", 0)}, npData)
+    fmt.Println(results[0].Value().([][]float32))
+
+    model = tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
+    // pdData:pandas DataFrame like in python
+    //     a    b    c    d
+    // 0  6.4  3.4  4.5  1.5
+    data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
+    columnsName := []string{"a", "b", "c", "d"}
+    for _, item := range data {
+        pdData := make(map[string][]float32)
+        for index, key := range columnsName {
+            pdData[key] = []float32{item[index]}
+        }
+        results := model.EstimatorServe([]tf.Output{
+            model.Op("dnn/head/predictions/probabilities", 0)}, pdData)
+        fmt.Println(results[0].Value().([][]float32))
+    }
 }
 ```
 
