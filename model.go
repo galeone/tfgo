@@ -15,6 +15,7 @@ package tfgo
 
 import (
 	"fmt"
+	"github.com/galeone/tfgo/preprocessor"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"io/ioutil"
 )
@@ -86,8 +87,14 @@ func (model *Model) Op(name string, idx int) tf.Output {
 	return op.Output(idx)
 }
 
-func (model *Model) ExecEstimator(tensors []tf.Output, data map[string][]float32, preproc_fn func(map[string][]float32) ([]byte, error)) (results []*tf.Tensor) {
-	sequence, err := preproc_fn(data)
+// EstimatorServe runs the inference on the model, exported as an estimator for serving.
+// The data can be in numpy or pandas format, e.g.
+// Pandas: { "a": 6.4, "b": 3.2, "c": 4.5,  "d": 1.5 }
+// Numpy: { "inputs": [6.4, 3.2, 4.5, 1.5] }
+// For pandas you have to wrap your values into an array, e.g: { "a": [6.4], "b": [3.2], ...}.
+// Internally it uses preprocessor.PythonDictToByteArray.
+func (model *Model) EstimatorServe(tensors []tf.Output, data map[string][]float32) (results []*tf.Tensor) {
+	sequence, err := preprocessor.PythonDictToByteArray(data)
 	if err != nil {
 		panic(err)
 	}

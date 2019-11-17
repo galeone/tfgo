@@ -33,26 +33,12 @@ func Int64ToFeature(value []int64) (exampleFeature *example.Feature) {
 	return
 }
 
-// NumpyToByteArray converts a Numpy-like structure (and Python dictionary) to a
+// PythonDictToByteArray converts a Python dictionary (or arrays) to a
 // byte array representation suitable to be used as input of a SavedModel.
-func NumpyToByteArray(featureInfo map[string][]float32) (seq []byte, err error) {
+func PythonDictToByteArray(featureInfo map[string][]float32) (seq []byte, err error) {
 	feature := make(map[string]*example.Feature)
 	for k, v := range featureInfo {
 		valFormat := Float32ToFeature(v)
-		feature[k] = valFormat
-	}
-	features := example.Features{Feature: feature}
-	byte_example := example.Example{Features: &features}
-	seq, err = proto.Marshal(&byte_example)
-	return
-}
-
-// PandasToByteArray converts a Pandas-like structure (Pandas DataFrame) to a
-// byte array representation suitable to be used as input of a SavedModel.
-func PandasToByteArray(featureInfo map[string]float32) (seq []byte, err error) {
-	feature := make(map[string]*example.Feature)
-	for k, v := range featureInfo {
-		valFormat := Float32ToFeature([]float32{v})
 		feature[k] = valFormat
 	}
 	features := example.Features{Feature: feature}
