@@ -20,7 +20,8 @@ before_install:
   - popd
   # Install TensorFlow
   - sudo pip3 install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"-cp36-cp36m-linux_x86_64.whl
-  - sudo pip3 install dytb protobuf
+  - sudo pip3 install protobuf
+  - sudo pip3 install -r test_models/requirements.txt
   # Install TensorFlow system library
   - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
