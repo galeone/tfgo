@@ -38,8 +38,8 @@ before_install:
   - sudo python3 create.py
   - sudo python3 estimator.py
   - sudo bash freeze_graph.sh
-  - sudo mv 1pb/*/* 1pb/
-  - sudo mv 2pb/*/* 2pb/
+  - sudo mv output/1pb/*/* output/1pb/
+  - sudo mv output/2pb/*/* output/2pb/
   - popd
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
