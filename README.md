@@ -63,7 +63,7 @@ Z == A false
 
 The list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo
 
-# Computer Vision using data flow graph
+## Computer Vision using data flow graph
 
 Tensorflow is rich of methods for performing operations on images. tfgo provides the `image` package that allows using the Go bindings to perform computer vision tasks in an elegant way.
 
@@ -124,12 +124,12 @@ func main() {
 
 the list of the available methods is available on GoDoc: http://godoc.org/github.com/galeone/tfgo/image
 
-# Train in Python, Serve in Go
+## Train in Python, Serve in Go
 
 Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of Python and Go code. Below you can find the Python and the Go code.
 Just dig into the example to understand how to serve a trained model with `tfgo`.
 
-**Python code**:
+### Python code
 
 ```python
 import sys
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     sys.exit(main())
 ```
 
-**Go code**:
+### Go code
 
 ```go
 package main
@@ -201,261 +201,59 @@ func main() {
 }
 ```
 
-# Train by python with tf.estimator,Serve in go
-**python train code**
-```python
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
+## Train with tf.estimator, serve in go
 
+`tfgo` supports two different inputs for the estimator:
 
-class EStrain(object):
+- Pandas DataFrames
+- Numpy Arrays
+- Python Dictionary
 
-    def __init__(self):
-        self.iris = load_iris()
+You can train you estimator using these three types of feature columns and you'll be able to run the inference using the `*model.EstimatorServe` method.
 
-    def get_train_test(self):
-        data = self.iris.data
-        target = self.iris.target
-        x_train, x_test, y_train, y_test = train_test_split(data, target, test_size=0.3, random_state=0)
-        return x_train, x_test, y_train, y_test
+### Training in Python using estimator and feature columns
 
-    def get_feature_columns_by_numpy(self):
-        columns = [
-            tf.feature_column.numeric_column("your_input", shape=(4,))
-        ]
-        return columns
+An example of supported input is shown in the **example**: [estimator.py](test_models/estimator.py).
 
-    def get_feature_columns_by_pandas(self):
-        columns = [
-            tf.feature_column.numeric_column(name,shape=(1,)) for name in list("abcd")
-        ]
-        return columns
+### Estimator serving using Go
 
-    def input_fn_by_numpy(self, x, y):
-        return tf.estimator.inputs.numpy_input_fn(
-            x={"your_input": x},
-            y=y,
-            batch_size=512,
-            num_epochs=1,
-            shuffle=False,
-            queue_capacity=1000,
-            num_threads=1
-        )
-
-    def input_fn_by_pandas(self, x, y):
-        return tf.estimator.inputs.pandas_input_fn(
-            x,
-            y,
-            batch_size=32,
-            num_epochs=1,
-            shuffle=False,
-            queue_capacity=1000,
-            num_threads=1
-        )
-
-    def to_pandas(self, arr, columns):
-        return pd.DataFrame(arr, columns=columns)
-
-    def get_est(self, path, feature_columns):
-        est = tf.estimator.DNNClassifier(
-            feature_columns=feature_columns,
-            hidden_units=[10, 20, 10],
-            n_classes=3,
-            model_dir=path
-        )
-        return est
-
-    def train_by_numpy(self):
-        x_train, x_test, y_train, y_test = self.get_train_test()
-        feature_columns = self.get_feature_columns_by_numpy()
-        est = self.get_est("./output/1", feature_columns)
-        train_input = self.input_fn_by_numpy(x_train, y_train)
-        test_input = self.input_fn_by_numpy(x_test, y_test)
-        est.train(input_fn=train_input)
-        accuracy_score = est.evaluate(input_fn=test_input)["accuracy"]
-        print("accuracy:%s\n" % accuracy_score)
-        """ a test example"""
-        samples = np.array([[6.4, 3.2, 4.5, 1.5],
-                            [6.4, 3.2, 4.5, 1.5]
-                            ])
-        samples_input = self.input_fn_by_numpy(samples, None)
-        predictions = list(est.predict(samples_input))
-        print(predictions)
-        predicted_classes = int(predictions[0]["classes"])
-        print("predict result is %s\n" % predicted_classes)
-
-    def train_by_pandas(self):
-        x_train, x_test, y_train, y_test = self.get_train_test()
-        feature_columns = self.get_feature_columns_by_pandas()
-        est = self.get_est("./output/2", feature_columns)
-        x_train_pd = self.to_pandas(x_train, columns=list("abcd"))
-        x_test_pd = self.to_pandas(x_test, columns=list("abcd"))
-        y_train_pd = pd.Series(y_train)
-        y_test_pd = pd.Series(y_test)
-        train_input = self.input_fn_by_pandas(x_train_pd, y_train_pd)
-        test_input = self.input_fn_by_pandas(x_test_pd, y_test_pd)
-        est.train(input_fn=train_input)
-        accuracy_score = est.evaluate(input_fn=test_input)["accuracy"]
-        print("accuracy:%s\n" % accuracy_score)
-        """ a test example"""
-        samples = pd.DataFrame(
-            [[6.4, 3.2, 4.5, 1.5]], columns=list("abcd")
-        )
-        samples_input = self.input_fn_by_pandas(samples, None)
-        predictions = list(est.predict(samples_input))
-        print(predictions)
-        predicted_classes = int(predictions[0]["classes"])
-        print("predict result is %s\n" % predicted_classes)
-
-
-if __name__ == '__main__':
-    et = EStrain()
-    et.train_by_pandas()
-    et.train_by_numpy()
-```
-**ckpt to pb**
-
-```python
-from train import EStrain
-import tensorflow as tf
-
-
-class ConvertToPB(object):
-
-    def __init__(self):
-        self.model_dir_np = "./output/1"
-        self.model_dir_pd = "./output/2"
-
-    def serving_input_receiver_fn(self, feature_spec):
-        serizlized_ft_example = tf.placeholder(dtype=tf.float64, shape=[None, 4], name="input_tensor")
-        receiver_tensors = {"input": serizlized_ft_example}
-        features = tf.parse_example(serizlized_ft_example, feature_spec)
-        return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
-
-    def convert_np(self):
-        es = EStrain()
-        feature_columns = es.get_feature_columns_by_numpy()
-        est = es.get_est(self.model_dir_np, feature_columns)
-        feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
-        export_input_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec)
-        est.export_saved_model("./output/1pb", export_input_fn, as_text=True)
-
-    def convert_pd(self):
-        es = EStrain()
-        feature_columns = es.get_feature_columns_by_pandas()
-        est = es.get_est(self.model_dir_pd, feature_columns)
-        feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
-        export_input_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec)
-        est.export_saved_model("./output/2pb", export_input_fn, as_text=True)
-
-
-if __name__ == '__main__':
-    ct = ConvertToPB()
-    ct.convert_np()
-    ct.convert_pd()
-
-```
-**Serve by go**
 ```go
 package main
 
 import (
-	"fmt"
-	tg "github.com/galeone/tfgo"
-	"github.com/galeone/tfgo/core/example"
-	"github.com/galeone/tfgo/train"
-	"github.com/gogo/protobuf/proto"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
+    "fmt"
+    tg "github.com/galeone/tfgo"
+    tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
 func main() {
-	data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
-	columnsName := []string{"a", "b", "c", "d"}
-	for _, item := range data {
-		// npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
-		npData := make(map[string][]float32)
-		npData["your_input"] = item
-		predictNP(npData)
-		// pdData:pandas DataFrame like in python
-		//     a    b    c    d
-		// 0  6.4  3.4  4.5  1.5
-		pdData := make(map[string]float32)
-		for index, key := range columnsName {
-			pdData[key] = item[index]
-		}
-		predictPD(pdData)
-	}
+    model := tg.LoadModel("test_models/output/1pb/", []string{"serve"}, nil)
 
+    // npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
+    npData := make(map[string][]float32)
+    npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
+
+    results := model.EstimatorServe([]tf.Output{
+        model.Op("dnn/head/predictions/probabilities", 0)}, npData)
+    fmt.Println(results[0].Value().([][]float32))
+
+    model = tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
+    // pdData:pandas DataFrame like in python
+    //     a    b    c    d
+    // 0  6.4  3.4  4.5  1.5
+    data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
+    columnsName := []string{"a", "b", "c", "d"}
+    for _, item := range data {
+        pdData := make(map[string][]float32)
+        for index, key := range columnsName {
+            pdData[key] = []float32{item[index]}
+        }
+        results := model.EstimatorServe([]tf.Output{
+            model.Op("dnn/head/predictions/probabilities", 0)}, pdData)
+        fmt.Println(results[0].Value().([][]float32))
+    }
 }
-
-func loadModeSavedPB(path string) (model *tg.Model) {
-	model = tg.LoadModel(path, []string{"serve"}, nil)
-	return
-}
-
-func predictNP(data map[string][]float32) {
-	npModePath := "./static/1"
-	model := loadModeSavedPB(npModePath)
-	sequence, err := sequenceNP(data)
-	if err != nil {
-		panic(err)
-	}
-	fakeInput, _ := tf.NewTensor([]string{string(sequence)})
-	results := model.Exec([]tf.Output{
-		model.Op("dnn/head/predictions/probabilities", 0),
-	}, map[tf.Output]*tf.Tensor{
-		model.Op("input_example_tensor", 0): fakeInput,
-	})
-	predictions := results[0].Value().([][]float32)
-	fmt.Println(predictions)
-}
-
-func predictPD(data map[string]float32) {
-	pdModelPath := "./static/2"
-	model := loadModeSavedPB(pdModelPath)
-	sequence, err := sequencePD(data)
-	if err != nil {
-		panic(err)
-	}
-	fakeInput, _ := tf.NewTensor([]string{string(sequence)})
-	results := model.Exec([]tf.Output{
-		model.Op("dnn/head/predictions/probabilities", 0),
-	}, map[tf.Output]*tf.Tensor{
-		model.Op("input_example_tensor", 0): fakeInput,
-	})
-	predictions := results[0].Value().([][]float32)
-	fmt.Println(predictions)
-}
-
-func sequenceNP(featureInfo map[string][]float32) (seq []byte, err error) {
-	feature := make(map[string]*example.Feature)
-	for k, v := range featureInfo {
-		valFormat := train.Float32ToFeature(v)
-		feature[k] = valFormat
-	}
-	Features := example.Features{Feature: feature}
-	myExample := example.Example{Features: &Features}
-	seq, err = proto.Marshal(&myExample)
-	return
-}
-
-func sequencePD(featureInfo map[string]float32) (seq []byte, err error) {
-	feature := make(map[string]*example.Feature)
-	for k, v := range featureInfo {
-		valFormat := train.Float32ToFeature([]float32{v})
-		feature[k] = valFormat
-	}
-	Features := example.Features{Feature: feature}
-	myExample := example.Example{Features: &Features}
-	seq, err = proto.Marshal(&myExample)
-	return
-}
-
 ```
-
 
 # Why?
 
