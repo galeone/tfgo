@@ -35,6 +35,10 @@ before_install:
   # Build models - used in tests
   - pushd test_models
   - sudo python3 create.py
+  - sudo python3 estimator.py
   - sudo bash freeze_graph.sh
+  - sudo mv 1pb/*/* 1pb/
+  - sudo mv 2pb/*/* 2pb/
+  - popd
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
