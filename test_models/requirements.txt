@@ -1,0 +1,5 @@
+pandas==0.25.3
+numpy==1.17.4
+tensorflow==1.14.0
+dytb==0.7.4
+scikit_learn==0.21.3
