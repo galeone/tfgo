@@ -17,6 +17,7 @@
 test_models/log/*
 test_models/export/*
 test_models/models/*
+test_models/output/*
 
 # Coverage HTML
 cover.html
