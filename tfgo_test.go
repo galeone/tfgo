@@ -221,6 +221,41 @@ func TestLoadModel(t *testing.T) {
 	}
 }
 
+func TestExecEstimatorNumpy(t *testing.T) {
+	model := tg.LoadModel("test_models/output/1pb/", []string{"serve"}, nil)
+	// npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
+	npData := make(map[string][]float32)
+	npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
+
+	results := model.EstimatorServe([]tf.Output{
+		model.Op("dnn/head/predictions/probabilities", 0)}, npData)
+
+	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 3 {
+		t.Errorf("Expected output shape of [1,3], got %v", results[0].Shape())
+	}
+}
+
+func TestExecEstimatorPandas(t *testing.T) {
+	model := tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
+	// pdData:pandas DataFrame like in python
+	//     a    b    c    d
+	// 0  6.4  3.4  4.5  1.5
+	data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
+	columnsName := []string{"a", "b", "c", "d"}
+	for _, item := range data {
+		pdData := make(map[string][]float32)
+		for index, key := range columnsName {
+			pdData[key] = []float32{item[index]}
+		}
+		results := model.EstimatorServe([]tf.Output{
+			model.Op("dnn/head/predictions/probabilities", 0)}, pdData)
+
+		if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 3 {
+			t.Errorf("Expected output shape of [1,3], got %v", results[0].Shape())
+		}
+	}
+}
+
 func TestImportModel(t *testing.T) {
 	model := tg.ImportModel("test_models/export/optimized_model.pb", "", nil)
 	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
