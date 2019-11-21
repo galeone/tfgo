@@ -35,12 +35,7 @@ func Int64ToFeature(value []int64) (exampleFeature *example.Feature) {
 
 // PythonDictToByteArray converts a Python dictionary (or arrays) to a
 // byte array representation suitable to be used as input of a SavedModel.
-func PythonDictToByteArray(featureInfo map[string][]float32) (seq []byte, err error) {
-	feature := make(map[string]*example.Feature)
-	for k, v := range featureInfo {
-		valFormat := Float32ToFeature(v)
-		feature[k] = valFormat
-	}
+func PythonDictToByteArray(feature map[string]*example.Feature) (seq []byte, err error) {
 	features := example.Features{Feature: feature}
 	byte_example := example.Example{Features: &features}
 	seq, err = proto.Marshal(&byte_example)
