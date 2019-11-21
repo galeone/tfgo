@@ -221,38 +221,56 @@ An example of supported input is shown in the **example**: [estimator.py](test_m
 package main
 
 import (
-    "fmt"
-    tg "github.com/galeone/tfgo"
-    tf "github.com/tensorflow/tensorflow/tensorflow/go"
+	"fmt"
+
+	tg "github.com/galeone/tfgo"
+	"github.com/galeone/tfgo/preprocessor"
+	"github.com/galeone/tfgo/proto/example"
+	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
 func main() {
-    model := tg.LoadModel("test_models/output/1pb/", []string{"serve"}, nil)
+	model := tg.LoadModel("./static/1", []string{"serve"}, nil)
 
-    // npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
-    npData := make(map[string][]float32)
-    npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
+	// npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
+	npData := make(map[string][]float32)
+	npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
+	featureExample := make(map[string]*example.Feature)
+	// You need to choose the method of serialization according to your features column's type
+	// e.g{"preprocessor.Float32ToFeature","preprocessor.StringToFeature","StringToFeature.Int64ToFeature"}
+	featureExample["your_input"] = preprocessor.Float32ToFeature(npData["your_input"])
+	seq, err := preprocessor.PythonDictToByteArray(featureExample)
+	if err !=nil{
+		panic(err)
+	}
+	newTensor, _ := tf.NewTensor([]string{string(seq)})
+	results := model.EstimatorServe([]tf.Output{
+		model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
+	fmt.Println(results[0].Value().([][]float32))
 
-    results := model.EstimatorServe([]tf.Output{
-        model.Op("dnn/head/predictions/probabilities", 0)}, npData)
-    fmt.Println(results[0].Value().([][]float32))
-
-    model = tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
-    // pdData:pandas DataFrame like in python
-    //     a    b    c    d
-    // 0  6.4  3.4  4.5  1.5
-    data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
-    columnsName := []string{"a", "b", "c", "d"}
-    for _, item := range data {
-        pdData := make(map[string][]float32)
-        for index, key := range columnsName {
-            pdData[key] = []float32{item[index]}
-        }
-        results := model.EstimatorServe([]tf.Output{
-            model.Op("dnn/head/predictions/probabilities", 0)}, pdData)
-        fmt.Println(results[0].Value().([][]float32))
-    }
+	model = tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
+	//pdData:pandas DataFrame like in python
+	//    A    B    C    D
+	//0   a    b    c    d
+	//1   e    f    g    h
+	// This is an example, just to show you how to deal with the features of string types.
+	data := [][]string{{"a", "b", "c", "d"}, {"e", "f", "g", "h"}}
+	columnsName := []string{"A", "B", "C", "D"}
+	for _, item := range data {
+		for index, key := range columnsName {
+			featureExample[key] = preprocessor.StringToFeature([]string{item[index]})
+		}
+		seq, err := preprocessor.PythonDictToByteArray(featureExample)
+		if err !=nil{
+			panic(err)
+		}
+		newTensor, _ := tf.NewTensor([]string{string(seq)})
+		results := model.EstimatorServe([]tf.Output{
+			model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
+		fmt.Println(results[0].Value().([][]float32))
+	}
 }
+
 ```
 
 # Why?

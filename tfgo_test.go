@@ -15,6 +15,8 @@ package tfgo_test
 
 import (
 	tg "github.com/galeone/tfgo"
+	"github.com/galeone/tfgo/preprocessor"
+	"github.com/galeone/tfgo/proto/example"
 	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"math"
 	"reflect"
@@ -226,9 +228,15 @@ func TestExecEstimatorNumpy(t *testing.T) {
 	// npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
 	npData := make(map[string][]float32)
 	npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
-
+	featureExample := make(map[string]*example.Feature)
+	featureExample["your_input"] = preprocessor.Float32ToFeature(npData["your_input"])
+	seq, err := preprocessor.PythonDictToByteArray(featureExample)
+	if err !=nil{
+		panic(err)
+	}
+	newTensor, _ := tf.NewTensor([]string{string(seq)})
 	results := model.EstimatorServe([]tf.Output{
-		model.Op("dnn/head/predictions/probabilities", 0)}, npData)
+		model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
 
 	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 3 {
 		t.Errorf("Expected output shape of [1,3], got %v", results[0].Shape())
@@ -241,14 +249,19 @@ func TestExecEstimatorPandas(t *testing.T) {
 	//     a    b    c    d
 	// 0  6.4  3.4  4.5  1.5
 	data := [][]float32{{6.4, 3.2, 4.5, 1.5}, {100., 34.5, 4.5, 3.5}}
+	featureExample := make(map[string]*example.Feature)
 	columnsName := []string{"a", "b", "c", "d"}
 	for _, item := range data {
-		pdData := make(map[string][]float32)
 		for index, key := range columnsName {
-			pdData[key] = []float32{item[index]}
+			featureExample[key] = preprocessor.Float32ToFeature([]float32{item[index]})
 		}
+		seq, err := preprocessor.PythonDictToByteArray(featureExample)
+		if err !=nil{
+			panic(err)
+		}
+		newTensor, _ := tf.NewTensor([]string{string(seq)})
 		results := model.EstimatorServe([]tf.Output{
-			model.Op("dnn/head/predictions/probabilities", 0)}, pdData)
+			model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
 
 		if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 3 {
 			t.Errorf("Expected output shape of [1,3], got %v", results[0].Shape())
