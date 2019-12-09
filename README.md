@@ -14,7 +14,7 @@ Also, it uses [Method chaining](https://en.wikipedia.org/wiki/Method_chaining) m
 
 # Getting started
 
-Prerequisite: https://www.tensorflow.org/versions/master/install/install_go
+Prerequisite: https://www.tensorflow.org/install/lang_go
 
 The core data structure of the Tensorflow's Go bindings is the `op.Scope` struct. tfgo allows creating new `*op.Scope` that solves the scoping issue mentioned above.
 
