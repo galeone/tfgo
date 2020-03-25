@@ -15,13 +15,14 @@ package tfgo
 
 import (
 	"fmt"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 	"io/ioutil"
+
+	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
 // Model represents a trained model
 type Model struct {
-	saved *tf.SavedModel
+	Saved *tf.SavedModel
 }
 
 // LoadModel creates a new *Model, loading it from the exportDir.
