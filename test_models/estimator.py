@@ -1,3 +1,6 @@
+import glob
+import shutil
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -28,7 +31,7 @@ class EStrain:
         return columns
 
     def input_fn_by_numpy(self, x, y):
-        return tf.estimator.inputs.numpy_input_fn(
+        return tf.compat.v1.estimator.inputs.numpy_input_fn(
             x={"your_input": x},
             y=y,
             batch_size=512,
@@ -39,7 +42,7 @@ class EStrain:
         )
 
     def input_fn_by_pandas(self, x, y):
-        return tf.estimator.inputs.pandas_input_fn(
+        return tf.compat.v1.estimator.inputs.pandas_input_fn(
             x,
             y,
             batch_size=32,
@@ -53,7 +56,7 @@ class EStrain:
         return pd.DataFrame(arr, columns=columns)
 
     def get_est(self, path, feature_columns):
-        est = tf.estimator.DNNClassifier(
+        est = tf.compat.v1.estimator.DNNClassifier(
             feature_columns=feature_columns,
             hidden_units=[10, 20, 10],
             n_classes=3,
@@ -111,31 +114,46 @@ class ConvertToPB:
         )
         receiver_tensors = {"input": serizlized_ft_example}
         features = tf.parse_example(serizlized_ft_example, feature_spec)
-        return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
+        return tf.compat.v1.estimator.export.ServingInputReceiver(
+            features, receiver_tensors
+        )
 
     def convert_np(self):
         es = EStrain()
         feature_columns = es.get_feature_columns_by_numpy()
         est = es.get_est(self.model_dir_np, feature_columns)
         feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
-        export_input_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(
-            feature_spec
+        export_input_fn = (
+            tf.compat.v1.estimator.export.build_parsing_serving_input_receiver_fn(
+                feature_spec
+            )
         )
         est.export_saved_model("./output/1pb", export_input_fn, as_text=True)
+        # The content of 1pb is a new folder with the current timestamp
+        # we don't need and want this. Thus, we keep the content of that folder (the savedmodel)
+        # and we put it directly inside the 1pb folder.
+        files = glob.glob("./output/1pb/*/*")
+        for f in files:
+            shutil.move(f, "./output/1pb/")
 
     def convert_pd(self):
         es = EStrain()
         feature_columns = es.get_feature_columns_by_pandas()
         est = es.get_est(self.model_dir_pd, feature_columns)
         feature_spec = tf.feature_column.make_parse_example_spec(feature_columns)
-        export_input_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(
-            feature_spec
+        export_input_fn = (
+            tf.compat.v1.estimator.export.build_parsing_serving_input_receiver_fn(
+                feature_spec
+            )
         )
         est.export_saved_model("./output/2pb", export_input_fn, as_text=True)
+        files = glob.glob("./output/2pb/*/*")
+        for f in files:
+            shutil.move(f, "./output/2pb/")
 
 
 if __name__ == "__main__":
-
+    tf.keras.backend.set_floatx("float64")
     et = EStrain()
     et.train_by_pandas()
     et.train_by_numpy()
