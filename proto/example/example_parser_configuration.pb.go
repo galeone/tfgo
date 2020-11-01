@@ -274,7 +274,9 @@ func init() {
 	proto.RegisterMapType((map[string]*FeatureConfiguration)(nil), "tensorflow.ExampleParserConfiguration.FeatureMapEntry")
 }
 
-func init() { proto.RegisterFile("example_parser_configuration.proto", fileDescriptor_593fcb99c7eb7149) }
+func init() {
+	proto.RegisterFile("example_parser_configuration.proto", fileDescriptor_593fcb99c7eb7149)
+}
 
 var fileDescriptor_593fcb99c7eb7149 = []byte{
 	// 494 bytes of a gzipped FileDescriptorProto
