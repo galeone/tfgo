@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Paolo Galeone. All right reserved.
+Copyright 2017-2020 Paolo Galeone. All right reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -184,7 +184,7 @@ func TestPanicModelRestore(t *testing.T) {
 		}
 	}()
 	// Panics because the tag does not exist
-	tg.LoadModel("test_models/export", []string{"tagwat"}, nil)
+	tg.LoadModel("test_models/keras", []string{"tagwat"}, nil)
 }
 
 func TestPanicModelWhenOpNotExists(t *testing.T) {
@@ -193,7 +193,7 @@ func TestPanicModelWhenOpNotExists(t *testing.T) {
 			t.Errorf("The code did not panic")
 		}
 	}()
-	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+	model := tg.LoadModel("test_models/keras", []string{"tag"}, nil)
 	model.Op("does not exists", 0)
 }
 
@@ -203,19 +203,46 @@ func TestPanicModelWhenOpOutputNotExists(t *testing.T) {
 			t.Errorf("The code did not panic")
 		}
 	}()
-	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+	model := tg.LoadModel("test_models/keras", []string{"tag"}, nil)
 	// Esists but wroing output number (1 instead of 0)
 	model.Op("LeNetDropout/softmax_linear/Identity", 1)
 }
 
 func TestLoadModel(t *testing.T) {
-	model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+	// A model exported with tf.saved_model.save()
+	// automatically comes with the "serve" tag because the SavedModel
+	// file format is designed for serving.
+	// This tag contains the various functions exported. Among these, there is
+	// always present the "serving_default" signature_def. This signature def
+	// works exactly like the TF 1.x graph. Get the input tensor and the output tensor,
+	// and use them as placeholder to feed and output to get, respectively.
+
+	// To get info inside a SavedModel the best tool is saved_model_cli
+	// that comes with the TensorFlow Python package.
+
+	// e.g. saved_model_cli show --all --dir output/keras
+	// gives, among the others, this info:
+
+	// signature_def['serving_default']:
+	// The given SavedModel SignatureDef contains the following input(s):
+	//   inputs['inputs_input'] tensor_info:
+	//       dtype: DT_FLOAT
+	//       shape: (-1, 28, 28, 1)
+	//       name: serving_default_inputs_input:0
+	// The given SavedModel SignatureDef contains the following output(s):
+	//   outputs['logits'] tensor_info:
+	//       dtype: DT_FLOAT
+	//       shape: (-1, 10)
+	//       name: StatefulPartitionedCall:0
+	// Method name is: tensorflow/serving/predict
+
+	model := tg.LoadModel("test_models/output/keras", []string{"serve"}, nil)
 
 	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
 	results := model.Exec([]tf.Output{
-		model.Op("LeNetDropout/softmax_linear/Identity", 0),
+		model.Op("StatefulPartitionedCall", 0),
 	}, map[tf.Output]*tf.Tensor{
-		model.Op("input_", 0): fakeInput,
+		model.Op("serving_default_inputs_input", 0): fakeInput,
 	})
 
 	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 10 {
@@ -231,7 +258,7 @@ func TestExecEstimatorNumpy(t *testing.T) {
 	featureExample := make(map[string]*example.Feature)
 	featureExample["your_input"] = preprocessor.Float32ToFeature(npData["your_input"])
 	seq, err := preprocessor.PythonDictToByteArray(featureExample)
-	if err !=nil{
+	if err != nil {
 		panic(err)
 	}
 	newTensor, _ := tf.NewTensor([]string{string(seq)})
@@ -256,7 +283,7 @@ func TestExecEstimatorPandas(t *testing.T) {
 			featureExample[key] = preprocessor.Float32ToFeature([]float32{item[index]})
 		}
 		seq, err := preprocessor.PythonDictToByteArray(featureExample)
-		if err !=nil{
+		if err != nil {
 			panic(err)
 		}
 		newTensor, _ := tf.NewTensor([]string{string(seq)})
@@ -267,30 +294,6 @@ func TestExecEstimatorPandas(t *testing.T) {
 			t.Errorf("Expected output shape of [1,3], got %v", results[0].Shape())
 		}
 	}
-}
-
-func TestImportModel(t *testing.T) {
-	model := tg.ImportModel("test_models/export/optimized_model.pb", "", nil)
-	fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
-	results := model.Exec([]tf.Output{
-		model.Op("LeNetDropout/softmax_linear/Identity", 0),
-	}, map[tf.Output]*tf.Tensor{
-		model.Op("input_", 0): fakeInput,
-	})
-
-	if results[0].Shape()[0] != 1 || results[0].Shape()[1] != 10 {
-		t.Errorf("Expected output shape of [1,10], got %v", results[0].Shape())
-	}
-}
-
-func TestPanicImportMOdel(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-	// Panics because the model is not correct
-	tg.ImportModel("test_models/export/saved_model.pb", "", nil)
 }
 
 func TestPanicImportModelReadFile(t *testing.T) {
