@@ -1,11 +1,14 @@
 language: go
+os: linux
 dist: focal
-sudo: true
 env:
     global:
         - TF_VERSION_MAJOR=2
-        - TF_VERSION_MINOR=3
-        - TF_VERSION_PATCH=1
+        - TF_VERSION_MINOR=1
+        - TF_VERSION_PATCH=2
+
+# NOTE: as of today (1 nov 2020) we can use only version 2.1
+# because TensorFlow >2.1 has a completely broken Go package that can't be build
 
 before_install:
   # Install TensorFlow
