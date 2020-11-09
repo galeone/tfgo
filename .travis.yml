@@ -15,7 +15,8 @@ before_install:
   # Install TensorFlow system library
   - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
-  # Get and install TensorFlow Go bindings
+  # Get and install TensorFlow Go bindings: we also need other packages not automatically downloaded (like proto)
+  - go get github.com/golang/protobuf/proto
   # NOTE: we use our own fork with the Go package fixed and go-gettable and usable
   - git clone https://github.com/galeone/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
   - pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
