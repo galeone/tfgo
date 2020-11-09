@@ -4,11 +4,8 @@ dist: focal
 env:
     global:
         - TF_VERSION_MAJOR=2
-        - TF_VERSION_MINOR=1
-        - TF_VERSION_PATCH=2
-
-# NOTE: as of today (1 nov 2020) we can use only version 2.1
-# because TensorFlow >2.1 has a completely broken Go package that can't be build
+        - TF_VERSION_MINOR=3
+        - TF_VERSION_PATCH=1
 
 before_install:
   # Install TensorFlow
@@ -19,9 +16,10 @@ before_install:
   - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
   # Get and install TensorFlow Go bindings
-  - git clone https://github.com/tensorflow/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
+  # NOTE: we use our own fork with the Go package fixed and go-gettable and usable
+  - git clone https://github.com/galeone/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
   - pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
-  - git checkout r"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"
+  - git checkout r"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"-go
   - go build
   - popd
   # Install Goveralls
