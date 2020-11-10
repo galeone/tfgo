@@ -28,7 +28,6 @@ before_install:
   # Build models - used in tests
   - pushd test_models
   - sudo python3 create.py
-  - sudo python3 estimator.py
   - popd
 script:
   - $GOPATH/bin/goveralls -service=travis-ci
