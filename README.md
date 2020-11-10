@@ -12,9 +12,37 @@ No more problems like:
 
 Also, it uses [Method chaining](https://en.wikipedia.org/wiki/Method_chaining) making possible to write pleasant Go code.
 
-# Getting started
+## Requirements
 
-Prerequisite: https://www.tensorflow.org/install/lang_go
+tfgo supports TensorFlow 2.3. In order to correctly work with TensorFlow 2.3 in Go, we have to use a fork I created with some fix for the Go bindings.
+
+You can use the pre-built C library (**no need to compile TensorFlow yourself**), but you **must** clone the TensorFlow fork I created and `go build` it.
+
+1. Download and install the C library from https://www.tensorflow.org/install/lang_c
+```bash
+curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.3.1.tar.gz" | sudo tar -C /usr/local -xz
+sudo ldconfig
+```
+
+2. Download some required dependency (the golang/protobuf/proto package) and clone the fork (branch r2.3-go) in the TensorFlow path.
+
+```bash
+go get github.com/golang/protobuf/proto
+# NOTE: we use our own fork with the Go package fixed and go-gettable and usable
+git clone https://github.com/galeone/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
+pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
+git checkout r2.3-go
+go build
+popd
+```
+
+3. You're ready to go.
+
+```
+go get github.com/galeone/tfgo
+```
+
+## Getting started
 
 The core data structure of the Tensorflow's Go bindings is the `op.Scope` struct. tfgo allows creating new `*op.Scope` that solves the scoping issue mentioned above.
 
@@ -126,53 +154,40 @@ the list of the available methods is available on GoDoc: http://godoc.org/github
 
 ## Train in Python, Serve in Go
 
-Using both [DyTB](https://github.com/galeone/dynamic-training-bench) and tfgo we can train, evaluate and export a machine learning model in very few lines of Python and Go code. Below you can find the Python and the Go code.
+TensorFlow 2 comes with a lot of easy way to export a computational graph (e.g. Keras model, or a function decorated with `@tf.function`) to the `SavedModel` serialization format (that's the only one officially supported).
+
+![saved model](.readme/saved_model.png)
+
+Using TensorFlow 2 (with Keras or tf.function) + tfgo, exporting a trained model (or a generic computational graph) and use it in Go is straightforward.
+
 Just dig into the example to understand how to serve a trained model with `tfgo`.
 
 ### Python code
 
 ```python
-import sys
 import tensorflow as tf
-from dytb.inputs.predefined.MNIST import MNIST
-from dytb.models.predefined.LeNetDropout import LeNetDropout
-from dytb.train import train
 
-def main():
-    """main executes the operations described in the module docstring"""
-    lenet = LeNetDropout()
-    mnist = MNIST()
+model = tf.keras.Sequential(
+    [
+        tf.keras.layers.Conv2D(
+            8,
+            (3, 3),
+            strides=(2, 2),
+            padding="valid",
+            input_shape=(28, 28, 1),
+            activation=tf.nn.relu,
+            name="inputs",
+        ),  # 14x14x8
+        tf.keras.layers.Conv2D(
+            16, (3, 3), strides=(2, 2), padding="valid", activation=tf.nn.relu
+        ),  # 7x716
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(10, name="logits"),  # linear
+    ]
+)
 
-    info = train(
-        model=lenet,
-        dataset=mnist,
-        hyperparameters={"epochs": 2},)
+tf.saved_model.save(model, "output/keras")
 
-    checkpoint_path = info["paths"]["best"]
-
-    with tf.Session() as sess:
-        # Define a new model, import the weights from best model trained
-        # Change the input structure to use a placeholder
-        images = tf.placeholder(tf.float32, shape=(None, 28, 28, 1), name="input_")
-        # define in the default graph the model that uses placeholder as input
-        _ = lenet.get(images, mnist.num_classes)
-
-        # The best checkpoint path contains just one checkpoint, thus the last is the best
-        saver = tf.train.Saver()
-        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
-
-        # Create a builder to export the model
-        builder = tf.saved_model.builder.SavedModelBuilder("export")
-        # Tag the model in order to be capable of restoring it specifying the tag set
-        # clear_device=True in order to export a device agnostic graph.
-        builder.add_meta_graph_and_variables(sess, ["tag"], clear_devices=True)
-        builder.save()
-
-    return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main())
 ```
 
 ### Go code
@@ -187,90 +202,45 @@ import (
 )
 
 func main() {
-        model := tg.LoadModel("test_models/export", []string{"tag"}, nil)
+        // A model exported with tf.saved_model.save()
+        // automatically comes with the "serve" tag because the SavedModel
+        // file format is designed for serving.
+        // This tag contains the various functions exported. Among these, there is
+        // always present the "serving_default" signature_def. This signature def
+        // works exactly like the TF 1.x graph. Get the input tensor and the output tensor,
+        // and use them as placeholder to feed and output to get, respectively.
+
+        // To get info inside a SavedModel the best tool is saved_model_cli
+        // that comes with the TensorFlow Python package.
+
+        // e.g. saved_model_cli show --all --dir output/keras
+        // gives, among the others, this info:
+
+        // signature_def['serving_default']:
+        // The given SavedModel SignatureDef contains the following input(s):
+        //   inputs['inputs_input'] tensor_info:
+        //       dtype: DT_FLOAT
+        //       shape: (-1, 28, 28, 1)
+        //       name: serving_default_inputs_input:0
+        // The given SavedModel SignatureDef contains the following output(s):
+        //   outputs['logits'] tensor_info:
+        //       dtype: DT_FLOAT
+        //       shape: (-1, 10)
+        //       name: StatefulPartitionedCall:0
+        // Method name is: tensorflow/serving/predict
+
+        model := tg.LoadModel("test_models/output/keras", []string{"serve"}, nil)       
 
         fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
         results := model.Exec([]tf.Output{
-                model.Op("LeNetDropout/softmax_linear/Identity", 0),
+                model.Op("StatefulPartitionedCall", 0),
         }, map[tf.Output]*tf.Tensor{
-                model.Op("input_", 0): fakeInput,
+                model.Op("serving_default_inputs_input", 0): fakeInput,
         })
 
-        predictions := results[0].Value().([][]float32)
+        predictions := results[0]
         fmt.Println(predictions)
 }
-```
-
-## Train with tf.estimator, serve in go
-
-`tfgo` supports two different inputs for the estimator:
-
-- Pandas DataFrames
-- Numpy Arrays
-- Python Dictionary
-
-You can train you estimator using these three types of feature columns and you'll be able to run the inference using the `*model.EstimatorServe` method.
-
-### Training in Python using estimator and feature columns
-
-An example of supported input is shown in the **example**: [estimator.py](test_models/estimator.py).
-
-### Estimator serving using Go
-
-```go
-package main
-
-import (
-	"fmt"
-
-	tg "github.com/galeone/tfgo"
-	"github.com/galeone/tfgo/preprocessor"
-	"github.com/galeone/tfgo/proto/example"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
-)
-
-func main() {
-	model := tg.LoadModel("./static/1", []string{"serve"}, nil)
-
-	// npData:numpy data like in python {"inputs":[6.4,3.2,4.5,1.5]}
-	npData := make(map[string][]float32)
-	npData["your_input"] = []float32{6.4, 3.2, 4.5, 1.5}
-	featureExample := make(map[string]*example.Feature)
-	// You need to choose the method of serialization according to your features column's type
-	// e.g{"preprocessor.Float32ToFeature","preprocessor.StringToFeature","StringToFeature.Int64ToFeature"}
-	featureExample["your_input"] = preprocessor.Float32ToFeature(npData["your_input"])
-	seq, err := preprocessor.PythonDictToByteArray(featureExample)
-	if err !=nil{
-		panic(err)
-	}
-	newTensor, _ := tf.NewTensor([]string{string(seq)})
-	results := model.EstimatorServe([]tf.Output{
-		model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
-	fmt.Println(results[0].Value().([][]float32))
-
-	model = tg.LoadModel("test_models/output/2pb/", []string{"serve"}, nil)
-	//pdData:pandas DataFrame like in python
-	//    A    B    C    D
-	//0   a    b    c    d
-	//1   e    f    g    h
-	// This is an example, just to show you how to deal with the features of string types.
-	data := [][]string{{"a", "b", "c", "d"}, {"e", "f", "g", "h"}}
-	columnsName := []string{"A", "B", "C", "D"}
-	for _, item := range data {
-		for index, key := range columnsName {
-			featureExample[key] = preprocessor.StringToFeature([]string{item[index]})
-		}
-		seq, err := preprocessor.PythonDictToByteArray(featureExample)
-		if err !=nil{
-			panic(err)
-		}
-		newTensor, _ := tf.NewTensor([]string{string(seq)})
-		results := model.EstimatorServe([]tf.Output{
-			model.Op("dnn/head/predictions/probabilities", 0)}, newTensor)
-		fmt.Println(results[0].Value().([][]float32))
-	}
-}
-
 ```
 
 # Why?
