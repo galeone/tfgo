@@ -229,7 +229,7 @@ func main() {
         //       name: StatefulPartitionedCall:0
         // Method name is: tensorflow/serving/predict
 
-        model := tg.LoadModel("test_models/output/keras", []string{"serve"}, nil)       
+        model := tg.LoadModel("test_models/output/keras", []string{"serve"}, nil)
 
         fakeInput, _ := tf.NewTensor([1][28][28][1]float32{})
         results := model.Exec([]tf.Output{
@@ -239,7 +239,7 @@ func main() {
         })
 
         predictions := results[0]
-        fmt.Println(predictions)
+        fmt.Println(predictions.Value())
 }
 ```
 
