@@ -24,8 +24,7 @@ var tensorCounter uint64
 
 // NewScope returns a unique scope in the format
 // input_<suffix> where suffix is a counter
-// This function is not thread safe and shouldn't be called
-// in parallel
+// This function isthread safe can be called in parallel
 func NewScope(root *op.Scope) *op.Scope {
 	var scope = atomic.AddUint64(&tensorCounter, 1)
 	return root.SubScope(fmt.Sprint("input_", scope))
