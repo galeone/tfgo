@@ -85,14 +85,3 @@ func (model *Model) Op(name string, idx int) tf.Output {
 	}
 	return op.Output(idx)
 }
-
-// EstimatorServe runs the inference on the model, exported as an estimator for serving.
-// The data can be in numpy or pandas format, e.g.
-// Pandas: { "a": 6.4, "b": 3.2, "c": 4.5,  "d": 1.5 }
-// Numpy: { "inputs": [6.4, 3.2, 4.5, 1.5] }
-// For pandas you have to wrap your values into an array, e.g: { "a": [6.4], "b": [3.2], ...}.
-// After that, use preprocessor.PythonDictToByteArray to create the correct input for this method.
-func (model *Model) EstimatorServe(tensors []tf.Output, input *tf.Tensor) (results []*tf.Tensor) {
-	return model.Exec(tensors, map[tf.Output]*tf.Tensor{
-		model.Op("input_example_tensor", 0): input})
-}
