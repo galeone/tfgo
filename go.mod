@@ -7,4 +7,4 @@ require (
 	github.com/tensorflow/tensorflow v2.1.0+incompatible
 )
 
-replace github.com/tensorflow/tensorflow => github.com/galeone/tensorflow v1.12.2-0.20201110143501-1b6f13331f4d
+replace github.com/tensorflow/tensorflow => github.com/galeone/tensorflow v2.3.2-0.20201109165538-b577cbc70ba2+incompatible
