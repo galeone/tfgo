@@ -3,6 +3,21 @@
 [![Build Status](https://travis-ci.org/galeone/tfgo.svg?branch=master)](https://travis-ci.org/galeone/tfgo)
 ---
 
+- [tfgo: Tensorflow in Go](#tfgo-tensorflow-in-go)
+  - [![Build Status](https://travis-ci.org/galeone/tfgo)](#)
+  - [Dependencies](#dependencies)
+  - [Installation](#installation)
+  - [Getting started](#getting-started)
+  - [Computer Vision using data flow graph](#computer-vision-using-data-flow-graph)
+  - [Train in Python, Serve in Go](#train-in-python-serve-in-go)
+    - [Python code](#python-code)
+    - [Go code](#go-code)
+  - [Why?](#why)
+  - [Contribute](#contribute)
+  - [Tensorflow installation](#tensorflow-installation)
+    - [Manual](#manual)
+    - [Docker](#docker)
+
 Tensorflow's Go bindings are [hard to use](https://pgaleone.eu/tensorflow/go/2017/05/29/understanding-tensorflow-using-go/): tfgo makes it easy!
 
 No more problems like:
@@ -12,31 +27,12 @@ No more problems like:
 
 Also, it uses [Method chaining](https://en.wikipedia.org/wiki/Method_chaining) making possible to write pleasant Go code.
 
-## Requirements
+## Dependencies
 
-tfgo supports TensorFlow 2.3. In order to correctly work with TensorFlow 2.3 in Go, we have to use a fork I created with some fix for the Go bindings.
+1. TensorFlow-2.3.1 lib. [How to install tensorflow](#tensorflow-installation).
+2. Tensorflow bindings github.com/galeone/tensorflow. In order to correctly work with TensorFlow 2.3 in Go, we have to use a fork I created with some fix for the Go bindings. Bindings can be too large for go mod proxy, so you may want to switch off proxy usage by executing `go env -w GONOSUMDB="github.com/galeone/tensorflow"` to pull code directly using system installed git. It changes nothing in the user interface -- you can use go modules as usual. 
 
-You can use the pre-built C library (**no need to compile TensorFlow yourself**), but you **must** clone the TensorFlow fork I created and `go build` it.
-
-1. Download and install the C library from https://www.tensorflow.org/install/lang_c
-```bash
-curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.3.1.tar.gz" | sudo tar -C /usr/local -xz
-sudo ldconfig
-```
-
-2. Download some required dependency (the golang/protobuf/proto package) and clone the fork (branch r2.3-go) in the TensorFlow path.
-
-```bash
-go get github.com/golang/protobuf/proto
-# NOTE: we use our own fork with the Go package fixed and go-gettable and usable
-git clone https://github.com/galeone/tensorflow $GOPATH/src/github.com/tensorflow/tensorflow/
-pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
-git checkout r2.3-go
-go build
-popd
-```
-
-3. You're ready to go.
+## Installation
 
 ```
 go get github.com/galeone/tfgo
@@ -82,7 +78,9 @@ func main() {
         fmt.Println("Z == A", Z == A) // ==> false
 }
 ```
+
 that produces
+
 ```
 Y:  [[200] [-200]] Z:  [[200] [-200]]
 Y == A true
@@ -243,14 +241,14 @@ func main() {
 }
 ```
 
-# Why?
+## Why?
 
 Thinking about computation represented using graphs, describing computing in this way is, in one word, *challenging*.
 
 Also, tfgo brings GPU computations to Go and allows writing parallel code without worrying about the device that executes it
 (just place the graph into the device you desire: that's it!)
 
-# Contribute
+## Contribute
 
 I love contributions. Seriously. Having people that share your same interests and want to face your same challenges it's something awesome.
 
@@ -259,3 +257,22 @@ If you'd like to contribute, just dig in the code and see what can be added or i
 Just follow the same design I use into the `image` package ("override" the same `Tensor` methods, document the methods, **test** your changes, ...)
 
 There are **a lot** of packages that can be added, like the `image` package. Feel free to work on a brand new package: I'd love to see this kind of contributions!
+
+## Tensorflow installation
+
+### Manual
+
+Download and install the C library from https://www.tensorflow.org/install/lang_c
+
+```bash
+curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.3.1.tar.gz" | sudo tar -C /usr/local -xz
+sudo ldconfig
+```
+
+### Docker
+
+```bash
+docker pull tensorflow/tensorflow:2.3.1
+```
+
+Or you can use sytem package manager.
