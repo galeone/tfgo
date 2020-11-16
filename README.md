@@ -4,7 +4,6 @@
 ---
 
 - [tfgo: Tensorflow in Go](#tfgo-tensorflow-in-go)
-  - [![Build Status](https://travis-ci.org/galeone/tfgo)](#)
   - [Dependencies](#dependencies)
   - [Installation](#installation)
   - [Getting started](#getting-started)
