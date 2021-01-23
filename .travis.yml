@@ -4,16 +4,16 @@ dist: focal
 env:
     global:
         - TF_VERSION_MAJOR=2
-        - TF_VERSION_MINOR=3
-        - TF_VERSION_PATCH=1
+        - TF_VERSION_MINOR=4
+        - TF_VERSION_PATCH=0
 
 before_install:
   # Install TensorFlow
-  - sudo pip3 install tensorflow=="$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"
-  - sudo pip3 install protobuf
-  - sudo pip3 install -r test_models/requirements.txt
+  - sudo pip3 install --progress-bar off tensorflow=="$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"
+  - sudo pip3 install --progress-bar off protobuf
+  - sudo pip3 install --progress-bar off -r test_models/requirements.txt
   # Install TensorFlow system library
-  - curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
+  - curl -L --silent "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-""$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"."$TF_VERSION_PATCH"".tar.gz" | sudo tar -C /usr/local -xz
   - sudo ldconfig
   # Get and install TensorFlow Go bindings: we also need other packages not automatically downloaded (like proto)
   - go get github.com/golang/protobuf/proto
