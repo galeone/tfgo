@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/tensorflow/tensorflow/tensorflow/go/op"
+	"github.com/galeone/tensorflow/tensorflow/go/op"
 )
 
 var tensorCounter uint64

@@ -14,12 +14,12 @@ limitations under the License.
 package image_test
 
 import (
+	tf "github.com/galeone/tensorflow/tensorflow/go"
+	"github.com/galeone/tensorflow/tensorflow/go/op"
 	tg "github.com/galeone/tfgo"
 	"github.com/galeone/tfgo/image"
 	"github.com/galeone/tfgo/image/filter"
 	"github.com/galeone/tfgo/image/padding"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
-	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 	"reflect"
 	"testing"
 )

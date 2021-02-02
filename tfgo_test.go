@@ -18,8 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
 )
 
 func TestNewScope(t *testing.T) {

@@ -15,10 +15,10 @@ package image
 
 import (
 	"fmt"
+	tf "github.com/galeone/tensorflow/tensorflow/go"
+	"github.com/galeone/tensorflow/tensorflow/go/op"
 	tg "github.com/galeone/tfgo"
 	"github.com/galeone/tfgo/image/padding"
-	tf "github.com/tensorflow/tensorflow/tensorflow/go"
-	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 	"strings"
 )
 
