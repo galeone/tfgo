@@ -19,7 +19,7 @@ before_install:
   - go get github.com/golang/protobuf/proto
   # NOTE: we use our own fork with the Go package fixed and go-gettable and usable
   - git clone https://github.com/galeone/tensorflow $GOPATH/src/github.com/galeone/tensorflow/
-  - pushd $GOPATH/src/github.com/tensorflow/tensorflow/tensorflow/go
+  - pushd $GOPATH/src/github.com/galeone/tensorflow/tensorflow/go
   - git checkout r"$TF_VERSION_MAJOR"."$TF_VERSION_MINOR"-go
   - go build
   - popd
