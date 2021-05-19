@@ -4,13 +4,13 @@
 #
 #    pip-compile requirements.in
 #
-absl-py==0.11.0
+absl-py==0.12.0
     # via
     #   tensorboard
     #   tensorflow
 astunparse==1.6.3
     # via tensorflow
-cachetools==4.2.0
+cachetools==4.2.2
     # via google-auth
 certifi==2020.12.5
     # via requests
@@ -18,29 +18,31 @@ chardet==4.0.0
     # via requests
 flatbuffers==1.12
     # via tensorflow
-gast==0.3.3
+gast==0.4.0
     # via tensorflow
-google-auth-oauthlib==0.4.2
+google-auth-oauthlib==0.4.4
     # via tensorboard
-google-auth==1.24.0
+google-auth==1.30.0
     # via
     #   google-auth-oauthlib
     #   tensorboard
 google-pasta==0.2.0
     # via tensorflow
-grpcio==1.32.0
+grpcio==1.34.1
     # via
     #   tensorboard
     #   tensorflow
-h5py==2.10.0
+h5py==3.1.0
     # via tensorflow
 idna==2.10
     # via requests
-joblib==1.0.0
+joblib==1.0.1
     # via scikit-learn
+keras-nightly==2.5.0.dev2021032900
+    # via tensorflow
 keras-preprocessing==1.1.2
     # via tensorflow
-markdown==3.3.3
+markdown==3.3.4
     # via tensorboard
 numpy==1.19.5
     # via
@@ -57,9 +59,9 @@ oauthlib==3.1.0
     # via requests-oauthlib
 opt-einsum==3.3.0
     # via tensorflow
-pandas==1.2.1
+pandas==1.2.4
     # via -r requirements.in
-protobuf==3.14.0
+protobuf==3.17.0
     # via
     #   tensorboard
     #   tensorflow
@@ -71,7 +73,7 @@ pyasn1==0.4.8
     #   rsa
 python-dateutil==2.8.1
     # via pandas
-pytz==2020.5
+pytz==2021.1
     # via pandas
 requests-oauthlib==1.3.0
     # via google-auth-oauthlib
@@ -79,11 +81,11 @@ requests==2.25.1
     # via
     #   requests-oauthlib
     #   tensorboard
-rsa==4.7
+rsa==4.7.2
     # via google-auth
-scikit-learn==0.24.1
+scikit-learn==0.24.2
     # via -r requirements.in
-scipy==1.6.0
+scipy==1.6.3
     # via scikit-learn
 six==1.15.0
     # via
@@ -92,19 +94,19 @@ six==1.15.0
     #   google-auth
     #   google-pasta
     #   grpcio
-    #   h5py
     #   keras-preprocessing
     #   protobuf
     #   python-dateutil
-    #   tensorboard
     #   tensorflow
+tensorboard-data-server==0.6.1
+    # via tensorboard
 tensorboard-plugin-wit==1.8.0
     # via tensorboard
-tensorboard==2.4.1
+tensorboard==2.5.0
     # via tensorflow
-tensorflow-estimator==2.4.0
+tensorflow-estimator==2.5.0
     # via tensorflow
-tensorflow==2.4.1
+tensorflow==2.5.0
     # via -r requirements.in
 termcolor==1.1.0
     # via tensorflow
@@ -112,9 +114,9 @@ threadpoolctl==2.1.0
     # via scikit-learn
 typing-extensions==3.7.4.3
     # via tensorflow
-urllib3==1.26.2
+urllib3==1.26.4
     # via requests
-werkzeug==1.0.1
+werkzeug==2.0.1
     # via tensorboard
 wheel==0.36.2
     # via
