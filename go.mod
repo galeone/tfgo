@@ -3,7 +3,6 @@ module github.com/galeone/tfgo
 go 1.15
 
 require (
-	github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompatible
-	github.com/golang/protobuf v1.4.3 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	github.com/galeone/tensorflow/tensorflow/go v0.0.0-20210519172502-4018d721b591 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 )
