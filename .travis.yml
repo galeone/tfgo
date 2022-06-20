@@ -4,8 +4,8 @@ dist: focal
 env:
     global:
         - TF_VERSION_MAJOR=2
-        - TF_VERSION_MINOR=5
-        - TF_VERSION_PATCH=0
+        - TF_VERSION_MINOR=9
+        - TF_VERSION_PATCH=1
 
 before_install:
   # Install TensorFlow
