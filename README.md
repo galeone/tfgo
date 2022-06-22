@@ -264,14 +264,14 @@ There are **a lot** of packages that can be added, like the `image` package. Fee
 Download and install the C library from https://www.tensorflow.org/install/lang_c
 
 ```bash
-curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.5.0.tar.gz" | sudo tar -C /usr/local -xz
+curl -L "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.9.1.tar.gz" | sudo tar -C /usr/local -xz
 sudo ldconfig
 ```
 
 ### Docker
 
 ```bash
-docker pull tensorflow/tensorflow:2.5.0
+docker pull tensorflow/tensorflow:2.9.1
 ```
 
 Or you can use system package manager.
