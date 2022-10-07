@@ -15,8 +15,10 @@ package tfgo
 
 import (
 	"fmt"
-	tf "github.com/galeone/tensorflow/tensorflow/go"
 	"io/ioutil"
+	"runtime"
+
+	tf "github.com/galeone/tensorflow/tensorflow/go"
 )
 
 // Model represents a trained model
@@ -32,6 +34,11 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 	var err error
 	model = new(Model)
 	model.saved, err = tf.LoadSavedModel(exportDir, tags, options)
+	runtime.SetFinalizer(model, func(model *Model) {
+		if model.saved != nil && model.saved.Session != nil {
+			_ = model.saved.Session.Close()
+		}
+	})
 	if err != nil {
 		panic(err.Error())
 	}
