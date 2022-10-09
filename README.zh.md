@@ -28,8 +28,8 @@ TensorFlow的Go绑定 [很难使用](https://pgaleone.eu/tensorflow/go/2017/05/2
 
 ## 依赖关系
 
-1. TensorFlow-2.5.0. [如何安装tensorflow](#tensorflow-installation)。
-2. TensorFlow绑定github.com/galeone/tensorflow。为了在Go中正确使用TensorFlow 2.5，我们必须使用我为Go绑定创建的分支。对于go mod代理来说，绑定可能太大，因此您可能想通过执行`go env -w GONOSUMDB="github.com/galeone/tensorflow"`来关闭代理使用，以直接使用系统安装的git提取代码。它不会改变用户界面中的内容——您可以像往常一样使用go模块。
+1. TensorFlow-2.9.1. [如何安装tensorflow](#tensorflow-installation)。
+2. TensorFlow绑定github.com/galeone/tensorflow。为了在Go中正确使用TensorFlow 2.9.1，我们必须使用我为Go绑定创建的分支。对于go mod代理来说，绑定可能太大，因此您可能想通过执行`go env -w GONOSUMDB="github.com/galeone/tensorflow"`来关闭代理使用，以直接使用系统安装的git提取代码。它不会改变用户界面中的内容——您可以像往常一样使用go模块。
 
 ## 安装
 

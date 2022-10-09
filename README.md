@@ -28,8 +28,8 @@ Also, it uses [Method chaining](https://en.wikipedia.org/wiki/Method_chaining) m
 
 ## Dependencies
 
-1. TensorFlow-2.5.0 lib. [How to install tensorflow](#tensorflow-installation).
-2. TensorFlow bindings github.com/galeone/tensorflow. In order to correctly work with TensorFlow 2.5 in Go, we have to use a fork I created with some fix for the Go bindings. Bindings can be too large for go mod proxy, so you may want to switch off proxy usage by executing `go env -w GONOSUMDB="github.com/galeone/tensorflow"` to pull code directly using system installed git. It changes nothing in the user interface -- you can use go modules as usual.
+1. TensorFlow-2.9.1 lib. [How to install tensorflow](#tensorflow-installation).
+2. TensorFlow bindings github.com/galeone/tensorflow. In order to correctly work with TensorFlow 2.9.1 in Go, we have to use a fork I created with some fix for the Go bindings. Bindings can be too large for go mod proxy, so you may want to switch off proxy usage by executing `go env -w GONOSUMDB="github.com/galeone/tensorflow"` to pull code directly using system installed git. It changes nothing in the user interface -- you can use go modules as usual.
 
 ## Installation
 
