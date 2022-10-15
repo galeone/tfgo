@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Paolo Galeone. All right reserved.
+Copyright 2017-2022 Paolo Galeone. All right reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package image
 
 import (
 	"fmt"
+
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	"github.com/galeone/tensorflow/tensorflow/go/op"
 	tg "github.com/galeone/tfgo"

@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020 Paolo Galeone <nessuno@nerdz.eu>
+# Copyright (C) 2017-2022 Paolo Galeone <nessuno@nerdz.eu>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this

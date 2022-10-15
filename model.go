@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Paolo Galeone. All right reserved.
+Copyright 2017-2022 Paolo Galeone. All right reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -34,14 +34,16 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 	var err error
 	model = new(Model)
 	model.saved, err = tf.LoadSavedModel(exportDir, tags, options)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
 	runtime.SetFinalizer(model, func(model *Model) {
 		if model.saved != nil && model.saved.Session != nil {
 			_ = model.saved.Session.Close()
 		}
 	})
-	if err != nil {
-		panic(err.Error())
-	}
 	return
 }
 
@@ -66,6 +68,11 @@ func ImportModel(serializedModel, prefix string, options *tf.SessionOptions) (mo
 	}
 
 	model.saved = &tf.SavedModel{Session: session, Graph: graph}
+	runtime.SetFinalizer(model, func(model *Model) {
+		if model.saved != nil && model.saved.Session != nil {
+			_ = model.saved.Session.Close()
+		}
+	})
 	return
 }
 
