@@ -260,6 +260,7 @@ There are **a lot** of packages that can be added, like the `image` package. Fee
 ## TensorFlow installation
 
 ### Manual
+On MacOS you can `brew install libtensorflow` (assuming you have brew installed. Brew is a package manager. If you need help installing brew follow instructions here: https://docs.brew.sh/Installation )
 
 Download and install the C library from https://www.tensorflow.org/install/lang_c
 
