@@ -15,7 +15,7 @@ package tfgo
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"runtime"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -52,7 +52,7 @@ func LoadModel(exportDir string, tags []string, options *tf.SessionOptions) (mod
 // Panics if the model can't be loaded
 func ImportModel(serializedModel, prefix string, options *tf.SessionOptions) (model *Model) {
 	model = new(Model)
-	contents, err := ioutil.ReadFile(serializedModel)
+	contents, err := os.ReadFile(serializedModel)
 	if err != nil {
 		panic(err.Error())
 	}
